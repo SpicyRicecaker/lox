@@ -159,8 +159,8 @@ impl Scanner {
                 while self.peek().is_digit(10) {
                     self.advance();
                 }
-                // if fraction continue
-                if self.peek() == '.' {
+                // if fraction continue, also 0. doesn't work, it has to be 0.(digit+)
+                if self.peek() == '.' && self.peek_next().is_digit(10) {
                     // consume .
                     self.advance();
                     // get the digits to the right
@@ -196,11 +196,22 @@ impl Scanner {
         true
     }
 
+    /// Peek character at current
     fn peek(&self) -> char {
         if self.is_at_end() {
             '\0'
         } else {
             self.chars[self.current]
+        }
+    }
+
+    /// Peek character at one after current
+    fn peek_next(&self) -> char {
+        let idx = self.current + 1;
+        if idx > self.chars.len() {
+            '\0'
+        } else {
+            self.chars[idx]
         }
     }
 }
