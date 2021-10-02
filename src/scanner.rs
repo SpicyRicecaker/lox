@@ -105,7 +105,7 @@ impl Scanner {
             // special character, could be divide, but also could be a comment
             '/' => {
                 // if comment
-                let res = if self.next_is('/') {
+                if self.next_is('/') {
                     // comment until end of line
                     // why not just use next is you ask? well next is always consumes, i thought conditionals were short circuiting but whatever
                     while self.peek() != '\n' && !self.is_at_end() {
@@ -119,6 +119,26 @@ impl Scanner {
             ' ' | '\r' | '\t' => {}
             // newline
             '\n' => self.line += 1,
+            // string literals
+            '"' => {
+                while self.peek() != '"' && !self.is_at_end() {
+                    // newlines inside "" don't count
+                    if self.peek() == '\n' {
+                        self.line += 1;
+                    }
+                    // remember, advance only changes current, not start
+                    self.advance();
+                }
+                // advance one more time, since we stop at the quote
+                self.advance();
+                // trim the quotes, and add the token
+                // substring start + 1 end - 1
+                let string = self.chars[(self.start + 1)..(self.current - 1)]
+                    .iter()
+                    .cloned()
+                    .collect::<String>();
+                self.add_token_literal(TokenType::String, Some(Literal::from(string)));
+            }
             _ => {
                 Lox::error(self.line as u32, "unexpected character.");
             }
