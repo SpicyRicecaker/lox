@@ -32,8 +32,12 @@ impl Scanner {
             self.scan_token();
         }
 
-        self.tokens
-            .push(Token::new(TokenType::Eof, String::new(), Literal::None, self.line))
+        self.tokens.push(Token::new(
+            TokenType::Eof,
+            String::new(),
+            Literal::None,
+            self.line,
+        ))
     }
 
     fn advance(&mut self) -> &char {
@@ -152,9 +156,9 @@ impl Scanner {
             }
             // digit
             n if n.is_digit(10) => {
-                    while self.peek().is_digit(10) {
-                        self.advance();
-                    }
+                while self.peek().is_digit(10) {
+                    self.advance();
+                }
                 // if fraction continue
                 if self.peek() == '.' {
                     // consume .

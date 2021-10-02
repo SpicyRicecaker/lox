@@ -51,9 +51,8 @@ pub enum TokenType {
 pub enum Literal {
     String(String),
     Number(f32),
-    None
+    None,
 }
-
 
 #[derive(Debug)]
 pub struct Token {
@@ -64,12 +63,7 @@ pub struct Token {
 }
 
 impl Token {
-    pub fn new(
-        token_type: TokenType,
-        lexeme: String,
-        literal: Literal,
-        line: usize,
-    ) -> Self {
+    pub fn new(token_type: TokenType, lexeme: String, literal: Literal, line: usize) -> Self {
         Self {
             token_type,
             lexeme,
