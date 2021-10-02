@@ -48,21 +48,18 @@ pub enum TokenType {
 }
 
 #[derive(Debug)]
-pub struct Literal {
-    string: String,
+pub enum Literal {
+    String(String),
+    Number(f32),
+    None
 }
 
-impl From<String> for Literal {
-    fn from(string: String) -> Self {
-        Self { string }
-    }
-}
 
 #[derive(Debug)]
 pub struct Token {
     token_type: TokenType,
     lexeme: String,
-    literal: Option<Literal>,
+    literal: Literal,
     line: usize,
 }
 
@@ -70,7 +67,7 @@ impl Token {
     pub fn new(
         token_type: TokenType,
         lexeme: String,
-        literal: Option<Literal>,
+        literal: Literal,
         line: usize,
     ) -> Self {
         Self {

@@ -33,7 +33,7 @@ impl Scanner {
         }
 
         self.tokens
-            .push(Token::new(TokenType::Eof, String::new(), None, self.line))
+            .push(Token::new(TokenType::Eof, String::new(), Literal::None, self.line))
     }
 
     fn advance(&mut self) -> &char {
@@ -42,7 +42,7 @@ impl Scanner {
         char
     }
 
-    fn add_token_literal(&mut self, token_type: TokenType, literal: Option<Literal>) {
+    fn add_token_literal(&mut self, token_type: TokenType, literal: Literal) {
         let text = self.chars[self.start..self.current]
             .iter()
             .cloned()
@@ -52,7 +52,7 @@ impl Scanner {
     }
 
     fn add_token(&mut self, token_type: TokenType) {
-        self.add_token_literal(token_type, None);
+        self.add_token_literal(token_type, Literal::None);
     }
 
     fn scan_token(&mut self) {
@@ -116,11 +116,12 @@ impl Scanner {
                 };
             }
             // any white space
-            ' ' | '\r' | '\t' => {}
+            w if w.is_whitespace() => {}
             // newline
             '\n' => self.line += 1,
             // string literals
             '"' => {
+                let start_line = self.line;
                 while self.peek() != '"' && !self.is_at_end() {
                     // newlines inside "" don't count
                     if self.peek() == '\n' {
@@ -128,6 +129,16 @@ impl Scanner {
                     }
                     // remember, advance only changes current, not start
                     self.advance();
+                }
+                // check if string terminates at end of file w/o closing
+                if self.is_at_end() {
+                    Lox::error(
+                        self.line as u32,
+                        &format!(
+                            "Unterminated string. Quote begins at line {}, char {}",
+                            start_line, self.start
+                        ),
+                    )
                 }
                 // advance one more time, since we stop at the quote
                 self.advance();
@@ -137,7 +148,32 @@ impl Scanner {
                     .iter()
                     .cloned()
                     .collect::<String>();
-                self.add_token_literal(TokenType::String, Some(Literal::from(string)));
+                self.add_token_literal(TokenType::String, Literal::String(string));
+            }
+            // digit
+            n if n.is_digit(10) => {
+                    while self.peek().is_digit(10) {
+                        self.advance();
+                    }
+                // if fraction continue
+                if self.peek() == '.' {
+                    // consume .
+                    self.advance();
+                    // get the digits to the right
+                    while self.peek().is_digit(10) {
+                        self.advance();
+                    }
+                }
+
+                // get string
+                let string = self.chars[(self.start)..(self.current)]
+                    .iter()
+                    .cloned()
+                    .collect::<String>();
+                // parse into f64
+                let float = string.parse::<f32>().unwrap();
+                // insert float into tokens
+                self.add_token_literal(TokenType::Number, Literal::Number(float));
             }
             _ => {
                 Lox::error(self.line as u32, "unexpected character.");
