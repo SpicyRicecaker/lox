@@ -47,10 +47,7 @@ impl Scanner {
     }
 
     fn add_token_literal(&mut self, token_type: TokenType, literal: Literal) {
-        let text = self.chars[self.start..self.current]
-            .iter()
-            .cloned()
-            .collect::<String>();
+        let text = self.chars.substring(self.start, self.current);
         self.tokens
             .push(Token::new(token_type, text, literal, self.line));
     }
@@ -148,11 +145,8 @@ impl Scanner {
                 self.advance();
                 // trim the quotes, and add the token
                 // substring start + 1 end - 1
-                let string = self.chars[(self.start + 1)..(self.current - 1)]
-                    .iter()
-                    .cloned()
-                    .collect::<String>();
-                self.add_token_literal(TokenType::String, Literal::String(string));
+                let text = self.chars.substring(self.start + 1, self.current - 1);
+                self.add_token_literal(TokenType::String, Literal::String(text));
             }
             // digit
             n if n.is_digit(10) => {
@@ -170,14 +164,19 @@ impl Scanner {
                 }
 
                 // get string
-                let string = self.chars[(self.start)..(self.current)]
-                    .iter()
-                    .cloned()
-                    .collect::<String>();
+                let text = self.chars.substring(self.start, self.current);
                 // parse into f64
-                let float = string.parse::<f32>().unwrap();
+                let float = text.parse::<f32>().unwrap();
                 // insert float into tokens
                 self.add_token_literal(TokenType::Number, Literal::Number(float));
+            }
+            // letter = keywords, and user-defined variable names
+            n if n.is_alphabetic() => {
+                while self.peek().is_alphanumeric() {
+                    self.advance();
+                }
+                let text = self.chars.substring(self.start, self.current);
+                self.add_token(keyword_type(&text));
             }
             _ => {
                 Lox::error(self.line as u32, "unexpected character.");
@@ -213,5 +212,38 @@ impl Scanner {
         } else {
             self.chars[idx]
         }
+    }
+}
+
+trait Substring {
+    fn substring(&self, start: usize, end: usize) -> String;
+}
+
+impl Substring for Vec<char> {
+    fn substring(&self, start: usize, end: usize) -> String {
+        self[start..end].iter().cloned().collect::<String>()
+    }
+}
+
+/// Serves as a hashmap, matches string to thing
+fn keyword_type(str: &str) -> TokenType {
+    match str {
+        "and" => TokenType::And,
+        "class" => TokenType::Class,
+        "else" => TokenType::Else,
+        "false" => TokenType::False,
+        "fn" => TokenType::Fn,
+        "if" => TokenType::If,
+        "nil" => TokenType::Nil,
+        "or" => TokenType::Or,
+        "print" => TokenType::Print,
+        "return" => TokenType::Return,
+        "super" => TokenType::Super,
+        "this" => TokenType::This,
+        "true" => TokenType::True,
+        "var" => TokenType::Var,
+        "while" => TokenType::While,
+        // If it's not any of the above keyworks, let it be a user-defined name lol
+        _ => TokenType::Identifier,
     }
 }
