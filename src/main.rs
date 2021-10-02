@@ -1,3 +1,4 @@
 fn main() {
-    lox::main();
+    let mut lox = lox::Lox::new();
+    lox.main();
 }
