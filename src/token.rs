@@ -16,7 +16,7 @@ pub enum TokenType {
     // One or two character tokens
     Bang,
     BangEqual,
-    Eequal,
+    Equal,
     EqualEqual,
     Greater,
     GreaterEqual,

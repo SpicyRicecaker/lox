@@ -1,7 +1,8 @@
 use crate::token::{Literal, Token, TokenType};
-struct Scanner {
+use crate::Lox;
+pub struct Scanner {
     chars: Vec<char>,
-    tokens: Vec<Token>,
+    pub tokens: Vec<Token>,
     /// First charcter in the lexeme being scanned
     start: usize,
     /// The character considered
@@ -10,7 +11,7 @@ struct Scanner {
     line: usize,
 }
 impl Scanner {
-    fn new(src: String) -> Self {
+    pub fn new(src: String) -> Self {
         let chars = src.chars().collect::<Vec<char>>();
         Self {
             chars,
@@ -25,7 +26,7 @@ impl Scanner {
         self.current >= self.chars.len()
     }
 
-    fn scan_tokens(&mut self) {
+    pub fn scan_tokens(&mut self) {
         while !self.is_at_end() {
             self.start = self.current;
             self.scan_token();
@@ -56,6 +57,7 @@ impl Scanner {
 
     fn scan_token(&mut self) {
         match self.advance() {
+            // fully single characters
             '(' => self.add_token(TokenType::LeftParen),
             ')' => self.add_token(TokenType::RightParen),
             '{' => self.add_token(TokenType::LeftBrace),
@@ -66,9 +68,79 @@ impl Scanner {
             '+' => self.add_token(TokenType::Plus),
             ';' => self.add_token(TokenType::Semicolon),
             '*' => self.add_token(TokenType::Star),
-            _ => {
-                panic!()
+            // possible doubled chars
+            // looks really ugly and we could combine them but I can't think of a way not to use doubled match statements
+            '!' => {
+                let res = if self.next_is('=') {
+                    TokenType::BangEqual
+                } else {
+                    TokenType::Bang
+                };
+                self.add_token(res);
             }
+            '=' => {
+                let res = if self.next_is('=') {
+                    TokenType::EqualEqual
+                } else {
+                    TokenType::Equal
+                };
+                self.add_token(res);
+            }
+            '<' => {
+                let res = if self.next_is('=') {
+                    TokenType::LessEqual
+                } else {
+                    TokenType::Less
+                };
+                self.add_token(res);
+            }
+            '>' => {
+                let res = if self.next_is('=') {
+                    TokenType::GreaterEqual
+                } else {
+                    TokenType::Greater
+                };
+                self.add_token(res);
+            }
+            // special character, could be divide, but also could be a comment
+            '/' => {
+                // if comment
+                let res = if self.next_is('/') {
+                    // comment until end of line
+                    // why not just use next is you ask? well next is always consumes, i thought conditionals were short circuiting but whatever
+                    while self.peek() != '\n' && !self.is_at_end() {
+                        self.advance();
+                    }
+                } else {
+                    self.add_token(TokenType::Slash);
+                };
+            }
+            // any white space
+            ' ' | '\r' | '\t' => {}
+            // newline
+            '\n' => self.line += 1,
+            _ => {
+                Lox::error(self.line as u32, "unexpected character.");
+            }
+        }
+    }
+
+    fn next_is(&mut self, expected: char) -> bool {
+        if self.is_at_end() {
+            return false;
+        }
+        if self.chars[self.current] != expected {
+            return false;
+        }
+        self.current += 1;
+        true
+    }
+
+    fn peek(&self) -> char {
+        if self.is_at_end() {
+            '\0'
+        } else {
+            self.chars[self.current]
         }
     }
 }

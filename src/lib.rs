@@ -1,3 +1,5 @@
+use scanner::Scanner;
+
 pub mod token;
 pub mod scanner;
 pub struct Lox {
@@ -43,11 +45,15 @@ impl Lox {
     }
 
     pub fn run(&self, src: String) {
-        let tokens = src.split_whitespace();
+        // let tokens = src.split_whitespace();
 
-        tokens.into_iter().for_each(|t| {
-            println!("{}", t);
-        });
+        // tokens.into_iter().for_each(|t| {
+        //     println!("{}", t);
+        // });
+        let mut scanner = Scanner::new(src);
+        scanner.scan_tokens();
+
+        dbg!(scanner.tokens);
 
         if self.had_error {
             std::process::exit(65);
