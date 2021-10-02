@@ -241,7 +241,7 @@ fn keyword_type(str: &str) -> TokenType {
         "super" => TokenType::Super,
         "this" => TokenType::This,
         "true" => TokenType::True,
-        "var" => TokenType::Var,
+        "let" => TokenType::Let,
         "while" => TokenType::While,
         // If it's not any of the above keyworks, let it be a user-defined name lol
         _ => TokenType::Identifier,

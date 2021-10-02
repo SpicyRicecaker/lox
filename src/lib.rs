@@ -30,11 +30,17 @@ impl Lox {
             let mut input = String::new();
             print!("> ");
             std::io::stdin().read_line(&mut input).unwrap();
-            if input.is_empty() {
-                break;
-            } else {
-                self.run(input);
-                self.had_error = false;
+            match &input.trim() {
+                b if b.is_empty() => {
+                    break;
+                }
+                &"exit" => {
+                    break;
+                }
+                _ => {
+                    self.run(input);
+                    self.had_error = false;
+                }
             }
         }
     }
