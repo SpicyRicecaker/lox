@@ -104,18 +104,57 @@ impl Scanner {
                 self.add_token(res);
             }
             // special character, could be divide, but also could be a comment
-            '/' => {
-                // if comment
-                if self.next_is('/') {
+            '/' => match self.peek() {
+                '/' => {
                     // comment until end of line
                     // why not just use next is you ask? well next is always consumes, i thought conditionals were short circuiting but whatever
                     while self.peek() != '\n' && !self.is_at_end() {
                         self.advance();
                     }
-                } else {
+                }
+                '*' => {
+                    let start_line = self.line;
+                    // initiate stack
+                    let mut stack = 1;
+
+                    // As long as our stack isn't empty
+                    while stack != 0 && !self.is_at_end() {
+                        match self.peek() {
+                            // if there's a new line add aline
+                            '\n' => self.line += 1,
+                            // if it's a star, check if it's an end comment
+                            '*' => {
+                                if self.peek_next() == '/' {
+                                    stack -= 1;
+                                    self.advance();
+                                }
+                            }
+                            // if it's a slash, check if it's a begin comment
+                            '/' => {
+                                if self.peek_next() == '*' {
+                                    stack += 1;
+                                    self.advance();
+                                }
+                            }
+                            _ => {}
+                        }
+                        // Advance regardless
+                        self.advance();
+                    }
+                    if self.is_at_end() {
+                        Lox::error(
+                            self.line as u32,
+                            &format!(
+                                "Unterminated multi-line comment. Start begins at line {}, char {}",
+                                start_line, self.start
+                            ),
+                        )
+                    }
+                }
+                _ => {
                     self.add_token(TokenType::Slash);
-                };
-            }
+                }
+            },
             // any white space
             w if w.is_whitespace() => {}
             // newline
