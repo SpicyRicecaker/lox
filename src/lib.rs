@@ -2,11 +2,11 @@ use scanner::Scanner;
 
 pub mod scanner;
 pub mod token;
-pub struct Lox {
+pub struct Nenia {
     had_error: bool,
 }
 
-impl Lox {
+impl Nenia {
     pub fn new() -> Self {
         Self { had_error: false }
     }
@@ -15,7 +15,7 @@ impl Lox {
         args.next();
 
         if args.len() > 1 {
-            println!("Usage: lox [script]");
+            println!("Usage: nenia [script]");
             std::process::exit(64);
         } else if args.len() != 1 {
             self.run_prompt();
@@ -67,7 +67,7 @@ impl Lox {
     }
 
     fn error(line: u32, msg: &str) {
-        Lox::report(line, "", msg);
+        Nenia::report(line, "", msg);
     }
 
     /// Better would be telling them the error and where the error occured, just like Rust
@@ -77,7 +77,7 @@ impl Lox {
     }
 }
 
-impl Default for Lox {
+impl Default for Nenia {
     fn default() -> Self {
         Self::new()
     }

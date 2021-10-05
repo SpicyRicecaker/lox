@@ -1,4 +1,4 @@
 fn main() {
-    let mut lox = lox::Lox::new();
-    lox.main();
+    let mut nenia = nenia::Nenia::new();
+    nenia.main();
 }

@@ -1,5 +1,5 @@
 use crate::token::{Literal, Token, TokenType};
-use crate::Lox;
+use crate::Nenia;
 pub struct Scanner {
     chars: Vec<char>,
     pub tokens: Vec<Token>,
@@ -142,7 +142,7 @@ impl Scanner {
                         self.advance();
                     }
                     if self.is_at_end() {
-                        Lox::error(
+                        Nenia::error(
                             self.line as u32,
                             &format!(
                                 "Unterminated multi-line comment. Start begins at line {}, char {}",
@@ -172,7 +172,7 @@ impl Scanner {
                 }
                 // check if string terminates at end of file w/o closing
                 if self.is_at_end() {
-                    Lox::error(
+                    Nenia::error(
                         self.line as u32,
                         &format!(
                             "Unterminated string. Quote begins at line {}, char {}",
@@ -218,7 +218,7 @@ impl Scanner {
                 self.add_token(keyword_type(&text));
             }
             _ => {
-                Lox::error(self.line as u32, "unexpected character.");
+                Nenia::error(self.line as u32, "unexpected character.");
             }
         }
     }
