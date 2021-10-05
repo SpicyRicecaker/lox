@@ -2,6 +2,7 @@ use scanner::Scanner;
 
 pub mod scanner;
 pub mod token;
+pub mod tree;
 pub struct Nenia {
     had_error: bool,
 }
