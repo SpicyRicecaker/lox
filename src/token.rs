@@ -54,6 +54,16 @@ pub enum Literal {
     None,
 }
 
+impl fmt::Display for Literal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Literal::String(s) => write!(f, "{}", s),
+            Literal::Number(n) => write!(f, "{}", n),
+            Literal::None => write!(f, ""),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Token {
     token_type: TokenType,
