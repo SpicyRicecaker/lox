@@ -1,6 +1,6 @@
 use crate::token::Literal;
 
-use self::ast::{Binary, Ex, Grouping, Unary};
+use self::ast::{Binary, Grouping, Unary};
 
 // pg https://www.craftinginterpreters.com/representing-code.html
 // i have no clue wtf I'm reading, why use a visitor problem? What does the code do?
@@ -52,34 +52,24 @@ mod ast {
         }
     }
 
-    pub struct Ex<T> {
-        pub wrapped: T,
-    }
-
-    impl<T> Ex<T> {
-        pub fn new(wrapped: T) -> Self {
-            Ex { wrapped }
-        }
-    }
-
     pub enum Expr {
         // e.g. expression operator expression
-        Literal(Ex<Literal>),
+        Literal(Literal),
         // e.g. "(" expression ")"
-        Grouping(Ex<Grouping>),
+        Grouping(Grouping),
         // e.g. "2323", 123
-        Binary(Ex<Binary>),
+        Binary(Binary),
         // e.g. ( "-" | "!" ) expression
-        Unary(Ex<Unary>),
+        Unary(Unary),
     }
 
     impl Expr {
         pub fn accept(&self, visitor: &Visitor) -> String {
             match self {
-                Expr::Literal(e) => visitor.visit_literal(&e.wrapped),
-                Expr::Grouping(e) => visitor.visit_grouping(&e.wrapped),
-                Expr::Binary(e) => visitor.visit_binary(&e.wrapped),
-                Expr::Unary(e) => visitor.visit_unary(&e.wrapped),
+                Expr::Literal(e) => visitor.visit_literal(e),
+                Expr::Grouping(e) => visitor.visit_grouping(e),
+                Expr::Binary(e) => visitor.visit_binary(e),
+                Expr::Unary(e) => visitor.visit_unary(e),
             }
         }
     }
@@ -118,14 +108,14 @@ mod test {
         use crate::token::Token;
         use crate::token::TokenType;
         // create a new tree
-        let binary_expression = Expr::Binary(Ex::new(Binary::new(
-            Box::new(Expr::Unary(Ex::new(Unary::new(
+        let binary_expression = Expr::Binary(Binary::new(
+            Box::new(Expr::Unary(Unary::new(
                 Token::new(TokenType::Minus, "-".to_string(), Literal::None, 1),
-                Box::new(Expr::Literal(Ex::new(Literal::Number(123.0)))),
-            )))),
+                Box::new(Expr::Literal(Literal::Number(123.0))),
+            ))),
             Token::new(TokenType::Star, "*".to_string(), Literal::None, 1),
-            Box::new(Expr::Literal(Ex::new(Literal::Number(45.67)))),
-        )));
+            Box::new(Expr::Literal(Literal::Number(45.67))),
+        ));
         let visitor = Visitor {};
         let res = binary_expression.accept(&visitor);
         println!("q123123");
