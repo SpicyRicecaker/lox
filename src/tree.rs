@@ -1,6 +1,6 @@
 use crate::token::Literal;
 
-use self::ast::{Binary, Grouping, Unary, Wrapper};
+use self::ast::{Binary, Ex, Grouping, Unary};
 
 // pg https://www.craftinginterpreters.com/representing-code.html
 // i have no clue wtf I'm reading, why use a visitor problem? What does the code do?
@@ -22,8 +22,12 @@ mod ast {
     }
 
     impl Binary {
-        fn new(left: Box<Expr>, operator: Token, right: Box<Expr>) -> Self {
-            Binary { left, operator, right }
+        pub fn new(left: Box<Expr>, operator: Token, right: Box<Expr>) -> Self {
+            Binary {
+                left,
+                operator,
+                right,
+            }
         }
     }
 
@@ -32,8 +36,8 @@ mod ast {
     }
 
     impl Grouping {
-        fn new(expression: Box<Expr>) -> Self {
-            Grouping { expression}
+        pub fn new(expression: Box<Expr>) -> Self {
+            Grouping { expression }
         }
     }
 
@@ -43,30 +47,30 @@ mod ast {
     }
 
     impl Unary {
-        fn new(operator: Token, right: Box<Expr>) -> Self {
+        pub fn new(operator: Token, right: Box<Expr>) -> Self {
             Unary { operator, right }
         }
     }
 
-    pub struct Wrapper<T> {
+    pub struct Ex<T> {
         pub wrapped: T,
     }
 
-    impl<T> Wrapper<T> {
+    impl<T> Ex<T> {
         pub fn new(wrapped: T) -> Self {
-            Wrapper { wrapped }
+            Ex { wrapped }
         }
     }
 
     pub enum Expr {
         // e.g. expression operator expression
-        Literal(Wrapper<Literal>),
+        Literal(Ex<Literal>),
         // e.g. "(" expression ")"
-        Grouping(Wrapper<Grouping>),
+        Grouping(Ex<Grouping>),
         // e.g. "2323", 123
-        Binary(Wrapper<Binary>),
+        Binary(Ex<Binary>),
         // e.g. ( "-" | "!" ) expression
-        Unary(Wrapper<Unary>),
+        Unary(Ex<Unary>),
     }
 
     impl Expr {
@@ -105,6 +109,8 @@ impl Visitor {
 
 #[cfg(test)]
 mod test {
+    use crate::tree::Visitor;
+
     #[test]
     fn tree() {
         use super::ast::*;
@@ -112,23 +118,18 @@ mod test {
         use crate::token::Token;
         use crate::token::TokenType;
         // create a new tree
-        let expression = Expr::Binary(
-            Wrapper::new(
-                Binary::new(
-                    Box::new(
-                        Expr::Unary(
-                            Token::new(
-                                TokenType::Minus, "-".to_string(), Literal::None, 1)
-                            Box::new(Expr::)
-                            )
-                            ))))
-            // Box::new(Expr::Unary(
-            //     Token::new(TokenType::Minus, "-".to_string(), Literal::None, 1),
-            //     Box::new(Expr::Literal(Literal::Number(123.0))),
-            // )),
-            // Token::new(TokenType::Star, "*".to_string(), Literal::None, 1),
-            // Box::new(Expr::Literal(Literal::Number(45.67))),
-        );
+        let binary_expression = Expr::Binary(Ex::new(Binary::new(
+            Box::new(Expr::Unary(Ex::new(Unary::new(
+                Token::new(TokenType::Minus, "-".to_string(), Literal::None, 1),
+                Box::new(Expr::Literal(Ex::new(Literal::Number(123.0)))),
+            )))),
+            Token::new(TokenType::Star, "*".to_string(), Literal::None, 1),
+            Box::new(Expr::Literal(Ex::new(Literal::Number(45.67)))),
+        )));
+        let visitor = Visitor {};
+        let res = binary_expression.accept(&visitor);
+        println!("q123123");
+        println!("{}", res);
     }
 }
 
