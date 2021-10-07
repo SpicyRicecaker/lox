@@ -87,8 +87,8 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{:?} {} {:?}",
-            self.token_type, self.lexeme, self.literal
+            "{}",
+            self.lexeme
         )
     }
 }

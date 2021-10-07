@@ -80,17 +80,17 @@ pub struct Visitor;
 impl Visitor {
     fn visit_binary(&self, expr: &Binary) -> String {
         format!(
-            "{}{}{}",
-            expr.left.accept(self),
+            "({} {} {})",
             expr.operator,
+            expr.left.accept(self),
             expr.right.accept(self)
         )
     }
     fn visit_unary(&self, expr: &Unary) -> String {
-        format!("{}{}", expr.operator, expr.right.accept(self))
+        format!("({} {})", expr.operator, expr.right.accept(self))
     }
     fn visit_grouping(&self, expr: &Grouping) -> String {
-        format!("({})", expr.expression.accept(self))
+        format!("(group {})", expr.expression.accept(self))
     }
     fn visit_literal(&self, expr: &Literal) -> String {
         format!("{}", expr)
@@ -114,23 +114,13 @@ mod test {
                 Box::new(Expr::Literal(Literal::Number(123.0))),
             ))),
             Token::new(TokenType::Star, "*".to_string(), Literal::None, 1),
-            Box::new(Expr::Literal(Literal::Number(45.67))),
+            Box::new(Expr::Grouping(Grouping::new(Box::new(Expr::Literal(
+                Literal::Number(45.67),
+            ))))),
         ));
         let visitor = Visitor {};
         let res = binary_expression.accept(&visitor);
-        println!("q123123");
-        println!("{}", res);
+
+        assert_eq!(res, "(* (- 123) (group 45.67))");
     }
 }
-
-// use crate::token::Token;
-
-// pub struct Expr<T> {
-//     pub state: T,
-// }
-
-// struct Binary<T, U> {
-//     left: Expr<T>,
-//     operator: Token,
-//     right: Expr<U>,
-// }
