@@ -6,14 +6,14 @@ use super::ast::InspectorMut;
 use super::*;
 
 pub struct ReversePolishNotation {
-    stack: VecDeque<Token>,
+    stack: Vec<Token>,
     output: Vec<String>,
 }
 
 impl ReversePolishNotation {
     pub fn new() -> Self {
         ReversePolishNotation {
-            stack: VecDeque::new(),
+            stack: Vec::new(),
             output: Vec::new(),
         }
     }
@@ -24,13 +24,14 @@ impl ReversePolishNotation {
             TokenType::Plus => 1,
             TokenType::Minus => 1,
             TokenType::RightParen => 3,
+            TokenType::LeftParen => 4,
             _ => -1,
         }
     }
     /// Fully returns output of AST, clearing stack and output in the process
     pub fn output(&mut self) -> String {
         // pop the rest of our stack
-        while let Some(s) = self.stack.pop_front() {
+        while let Some(s) = self.stack.pop() {
             self.output.push(s.lexeme);
         }
         let out = self.output.join(" ");
@@ -38,29 +39,33 @@ impl ReversePolishNotation {
         out
     }
     pub fn push_operator(&mut self, token: &Token) {
-        // check
+        // get prio of current token
         let prio = Self::prio(token);
 
         // if paren pop all
         if prio == 3 {
-            while let Some(c) = self.stack.pop_front() {
+            while let Some(c) = self.stack.pop() {
                 if c.token_type == TokenType::LeftParen {
                     break;
+                } else {
+                    // add to output
+                    self.output.push(c.lexeme);
                 }
             }
         } else {
-            while let Some(char) = self.stack.front() {
+            while let Some(char) = self.stack.last() {
                 // if the prio of current operator is greater or equal
-                if prio >= Self::prio(char) {
+                // only right paren has the right to remove left paren
+                if char.token_type != TokenType::LeftParen && prio <= Self::prio(char) {
                     // pop the top of the stack into the output
-                    self.output.push(self.stack.pop_front().unwrap().lexeme);
+                    self.output.push(self.stack.pop().unwrap().lexeme);
                 } else {
                     // otherwise don't modify the current stack
                     break;
                 }
             }
             // push self to struct
-            self.stack.push_front(token.clone());
+            self.stack.push(token.clone());
         }
     }
 }
@@ -106,6 +111,9 @@ fn rpn() {
     use crate::token::Literal;
     use crate::token::Token;
     use crate::token::TokenType;
+
+    let mut visitor = ReversePolishNotation::new();
+
     // create a new tree
     let binary_expression = Expr::Binary(Binary::new(
         Box::new(Expr::Binary(Binary::new(
@@ -120,10 +128,30 @@ fn rpn() {
             Box::new(Expr::Literal(Literal::Number(3.0))),
         ))),
     ));
-    let mut visitor = ReversePolishNotation::new();
-    binary_expression.accept_mut(&mut visitor);
-    let out = visitor.output();
-    println!("{}", out);
 
-    assert_eq!(out, "1 2 + 4 3 - *");
+    binary_expression.accept_mut(&mut visitor);
+
+    assert_eq!(visitor.output(), "1 2 4 * + 3 -");
+
+    let grouping = Expr::Binary(Binary::new(
+        Box::new(Expr::Grouping(Grouping::new(Box::new(Expr::Binary(
+            Binary::new(
+                Box::new(Expr::Literal(Literal::Number(1.0))),
+                Token::new(TokenType::Plus, "+".to_string(), Literal::None, 1),
+                Box::new(Expr::Literal(Literal::Number(2.0))),
+            ),
+        ))))),
+        Token::new(TokenType::Star, "*".to_string(), Literal::None, 1),
+        Box::new(Expr::Grouping(Grouping::new(Box::new(Expr::Binary(
+            Binary::new(
+                Box::new(Expr::Literal(Literal::Number(4.0))),
+                Token::new(TokenType::Plus, "-".to_string(), Literal::None, 1),
+                Box::new(Expr::Literal(Literal::Number(3.0))),
+            ),
+        ))))),
+    ));
+
+    grouping.accept_mut(&mut visitor);
+
+    assert_eq!(visitor.output(), "1 2 + 4 3 - *");
 }
