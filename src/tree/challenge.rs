@@ -87,14 +87,14 @@ impl InspectorMut for ReversePolishNotation {
         self.push_operator(&Token::new(
             TokenType::LeftParen,
             "(".to_string(),
-            Literal::None,
+            Literal::Nil,
             1,
         ));
         expr.expression.accept_mut(self);
         self.push_operator(&Token::new(
             TokenType::RightParen,
             ")".to_string(),
-            Literal::None,
+            Literal::Nil,
             1,
         ));
     }
@@ -118,13 +118,13 @@ fn rpn() {
     let binary_expression = Expr::Binary(Binary::new(
         Box::new(Expr::Binary(Binary::new(
             Box::new(Expr::Literal(Literal::Number(1.0))),
-            Token::new(TokenType::Plus, "+".to_string(), Literal::None, 1),
+            Token::new(TokenType::Plus, "+".to_string(), Literal::Nil, 1),
             Box::new(Expr::Literal(Literal::Number(2.0))),
         ))),
-        Token::new(TokenType::Star, "*".to_string(), Literal::None, 1),
+        Token::new(TokenType::Star, "*".to_string(), Literal::Nil, 1),
         Box::new(Expr::Binary(Binary::new(
             Box::new(Expr::Literal(Literal::Number(4.0))),
-            Token::new(TokenType::Minus, "-".to_string(), Literal::None, 1),
+            Token::new(TokenType::Minus, "-".to_string(), Literal::Nil, 1),
             Box::new(Expr::Literal(Literal::Number(3.0))),
         ))),
     ));
@@ -137,15 +137,15 @@ fn rpn() {
         Box::new(Expr::Grouping(Grouping::new(Box::new(Expr::Binary(
             Binary::new(
                 Box::new(Expr::Literal(Literal::Number(1.0))),
-                Token::new(TokenType::Plus, "+".to_string(), Literal::None, 1),
+                Token::new(TokenType::Plus, "+".to_string(), Literal::Nil, 1),
                 Box::new(Expr::Literal(Literal::Number(2.0))),
             ),
         ))))),
-        Token::new(TokenType::Star, "*".to_string(), Literal::None, 1),
+        Token::new(TokenType::Star, "*".to_string(), Literal::Nil, 1),
         Box::new(Expr::Grouping(Grouping::new(Box::new(Expr::Binary(
             Binary::new(
                 Box::new(Expr::Literal(Literal::Number(4.0))),
-                Token::new(TokenType::Plus, "-".to_string(), Literal::None, 1),
+                Token::new(TokenType::Plus, "-".to_string(), Literal::Nil, 1),
                 Box::new(Expr::Literal(Literal::Number(3.0))),
             ),
         ))))),

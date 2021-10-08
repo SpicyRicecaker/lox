@@ -10,7 +10,7 @@ use self::ast::{Binary, Grouping, Inspector, Unary};
 // Ok, though I do know that enums make 100% sense in defining expressions.
 // so let's do that below
 
-mod ast {
+pub mod ast {
     use crate::token::Literal;
     use crate::token::Token;
 
@@ -133,10 +133,10 @@ mod test {
         // create a new tree
         let binary_expression = Expr::Binary(Binary::new(
             Box::new(Expr::Unary(Unary::new(
-                Token::new(TokenType::Minus, "-".to_string(), Literal::None, 1),
+                Token::new(TokenType::Minus, "-".to_string(), Literal::Nil, 1),
                 Box::new(Expr::Literal(Literal::Number(123.0))),
             ))),
-            Token::new(TokenType::Star, "*".to_string(), Literal::None, 1),
+            Token::new(TokenType::Star, "*".to_string(), Literal::Nil, 1),
             Box::new(Expr::Grouping(Grouping::new(Box::new(Expr::Literal(
                 Literal::Number(45.67),
             ))))),

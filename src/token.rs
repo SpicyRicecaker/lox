@@ -51,7 +51,8 @@ pub enum TokenType {
 pub enum Literal {
     String(String),
     Number(f32),
-    None,
+    Boolean(bool),
+    Nil,
 }
 
 impl fmt::Display for Literal {
@@ -59,7 +60,8 @@ impl fmt::Display for Literal {
         match self {
             Literal::String(s) => write!(f, "{}", s),
             Literal::Number(n) => write!(f, "{}", n),
-            Literal::None => write!(f, ""),
+            Literal::Boolean(b) => write!(f, "{}", b),
+            Literal::Nil => write!(f, ""),
         }
     }
 }

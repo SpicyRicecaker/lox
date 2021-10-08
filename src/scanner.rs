@@ -35,7 +35,7 @@ impl Scanner {
         self.tokens.push(Token::new(
             TokenType::Eof,
             String::new(),
-            Literal::None,
+            Literal::Nil,
             self.line,
         ))
     }
@@ -53,7 +53,7 @@ impl Scanner {
     }
 
     fn add_token(&mut self, token_type: TokenType) {
-        self.add_token_literal(token_type, Literal::None);
+        self.add_token_literal(token_type, Literal::Nil);
     }
 
     fn scan_token(&mut self) {

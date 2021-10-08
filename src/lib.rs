@@ -3,6 +3,7 @@ use scanner::Scanner;
 pub mod scanner;
 pub mod token;
 pub mod tree;
+pub mod parser;
 pub struct Nenia {
     had_error: bool,
 }
