@@ -1,6 +1,7 @@
 use crate::token::Literal;
+mod challenge;
 
-use self::ast::{Binary, Grouping, Unary};
+use self::ast::{Binary, Grouping, Inspector, Unary};
 
 // pg https://www.craftinginterpreters.com/representing-code.html
 // i have no clue wtf I'm reading, why use a visitor problem? What does the code do?
@@ -13,6 +14,7 @@ mod ast {
     use crate::token::Literal;
     use crate::token::Token;
 
+    use super::challenge;
     use super::Visitor;
 
     pub struct Binary {
@@ -72,12 +74,33 @@ mod ast {
                 Expr::Unary(e) => visitor.visit_unary(e),
             }
         }
+        pub fn accept_mut(&self, visitor: &mut challenge::ReversePolishNotation) {
+            match self {
+                Expr::Literal(e) => visitor.visit_literal(e),
+                Expr::Grouping(e) => visitor.visit_grouping(e),
+                Expr::Binary(e) => visitor.visit_binary(e),
+                Expr::Unary(e) => visitor.visit_unary(e),
+            }
+        }
+    }
+
+    pub trait Inspector {
+        fn visit_binary(&self, expr: &Binary) -> String;
+        fn visit_unary(&self, expr: &Unary) -> String;
+        fn visit_grouping(&self, expr: &Grouping) -> String;
+        fn visit_literal(&self, expr: &Literal) -> String;
+    }
+    pub trait InspectorMut {
+        fn visit_binary(&mut self, expr: &Binary);
+        fn visit_unary(&mut self, expr: &Unary);
+        fn visit_grouping(&mut self, expr: &Grouping);
+        fn visit_literal(&mut self, expr: &Literal);
     }
 }
 
 pub struct Visitor;
 
-impl Visitor {
+impl Inspector for Visitor {
     fn visit_binary(&self, expr: &Binary) -> String {
         format!(
             "({} {} {})",
