@@ -1,20 +1,23 @@
-use core::panic;
 pub mod error;
 
 use crate::{
+    ast::{Binary, Expr, Grouping, Unary},
     token::{Literal, Token, TokenType},
-    tree::ast::{Binary, Expr, Grouping, Unary},
 };
 use error::{Error, ErrorKind};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-struct Parser {
+pub struct Parser {
     tokens: Vec<Token>,
     current: usize,
 }
 
 impl Parser {
+    pub fn parse(&mut self) -> Result<Expr> {
+        self.expression()
+    }
+
     fn recursive_descent(
         &mut self,
         token_type: &[TokenType],
@@ -94,7 +97,11 @@ impl Parser {
                 self.consume(TokenType::RightParen)?;
                 Expr::Grouping(Grouping::new(Box::new(expr)))
             }
-            _ => panic!(),
+            _ => {
+                return Err(Box::new(self::error::Error::new(
+                    self::error::ErrorKind::ExpectExpression,
+                )))
+            }
         };
         self.advance();
         Ok(expr)
@@ -154,5 +161,31 @@ impl Parser {
     }
     fn previous(&self) -> &Token {
         &self.tokens[self.current - 1]
+    }
+
+    /// In error handling, when we come across an error, we want to report it, but not any of
+    /// the false positives that will be generated from it as a result.
+    /// This function discards all errors until what it thinks is the next statement (e.g. right after a semicolon)
+    fn synchronize(&mut self) {
+        self.advance();
+
+        while !self.is_at_end() {
+            if self.previous().token_type == TokenType::Semicolon {
+                return;
+            }
+
+            match self.peek().token_type {
+                TokenType::Class
+                | TokenType::Fn
+                | TokenType::Let
+                | TokenType::For
+                | TokenType::If
+                | TokenType::While
+                | TokenType::Print
+                | TokenType::Return => return,
+                _ => {}
+            }
+        }
+        self.advance();
     }
 }

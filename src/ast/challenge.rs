@@ -1,6 +1,5 @@
 use crate::token::{Token, TokenType};
 
-use super::ast::InspectorMut;
 use super::*;
 
 pub struct ReversePolishNotation {
@@ -109,9 +108,26 @@ impl InspectorMut for ReversePolishNotation {
     }
 }
 
+impl Expr {
+    pub fn accept_mut(&self, visitor: &mut challenge::ReversePolishNotation) {
+        match self {
+            Expr::Literal(e) => visitor.visit_literal(e),
+            Expr::Grouping(e) => visitor.visit_grouping(e),
+            Expr::Binary(e) => visitor.visit_binary(e),
+            Expr::Unary(e) => visitor.visit_unary(e),
+        }
+    }
+}
+pub trait InspectorMut {
+    fn visit_binary(&mut self, expr: &Binary);
+    fn visit_unary(&mut self, expr: &Unary);
+    fn visit_grouping(&mut self, expr: &Grouping);
+    fn visit_literal(&mut self, expr: &Literal);
+}
+
 #[test]
 fn rpn() {
-    use super::ast::*;
+    use super::*;
     use crate::token::Literal;
     use crate::token::Token;
     use crate::token::TokenType;

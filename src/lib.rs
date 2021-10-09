@@ -1,11 +1,12 @@
+use ast::printer::Visitor;
 use scanner::Scanner;
 use std::error::Error;
 
+pub mod ast;
 pub mod error;
 pub mod parser;
 pub mod scanner;
 pub mod token;
-pub mod tree;
 
 pub fn main() -> Result<(), Box<dyn Error>> {
     let mut args = std::env::args();
@@ -24,15 +25,14 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn run(src: String) -> Result<(), Box<dyn Error>> {
-    // let tokens = src.split_whitespace();
-
-    // tokens.into_iter().for_each(|t| {
-    //     println!("{}", t);
-    // });
     let mut scanner = Scanner::new(src);
     scanner.scan_tokens()?;
 
-    // dbg!(scanner.tokens);
+    let mut parser = parser::Parser::new(scanner.tokens);
+    match parser.parse() {
+        Ok(ex) => println!("{}", Visitor::new().print(ex)),
+        Err(e) => eprintln!("An error occured while parsing tree: {}", e),
+    };
 
     Ok(())
 }
@@ -62,13 +62,3 @@ pub fn run_file(arg: &str) -> Result<(), Box<dyn Error>> {
     let content = std::fs::read_to_string(arg)?;
     run(content)
 }
-
-// fn error(line: u32, msg: &str) {
-//     Nenia::report(line, "", msg);
-// }
-
-// /// Better would be telling them the error and where the error occured, just like Rust
-// /// We all know how useless `segfault (core dumped)` is
-// fn report(line: u32, location: &str, msg: &str) {
-//     println!("[line {}] Error{}:{}", line, location, msg);
-// }
