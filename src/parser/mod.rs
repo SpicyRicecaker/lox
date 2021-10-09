@@ -1,7 +1,5 @@
 pub mod error;
 
-use core::panic;
-
 use crate::{
     ast::{Binary, Expr, Grouping, Unary},
     token::{Literal, Token, TokenType},
@@ -95,6 +93,25 @@ impl Parser {
             TokenType::Nil,
             TokenType::Number,
             TokenType::LeftParen,
+            // better error handling, no left operand
+            // + 2
+            TokenType::Plus,
+            // * 2
+            TokenType::Star,
+            // / 2
+            TokenType::Slash,
+            // < 2
+            TokenType::Less,
+            // <= 2
+            TokenType::LessEqual,
+            // > 2
+            TokenType::Greater,
+            // >= 2
+            TokenType::GreaterEqual,
+            // != 2
+            TokenType::BangEqual,
+            // == 2
+            TokenType::EqualEqual,
         ]) {
             let expr = match self.previous().token_type {
                 TokenType::False => Expr::Literal(Literal::Boolean(false)),
@@ -107,6 +124,38 @@ impl Parser {
                     let expr = self.expression()?;
                     self.consume(TokenType::RightParen)?;
                     Expr::Grouping(Grouping::new(Box::new(expr)))
+                }
+                // Call factor to evaluate the rest of the statement as a factor, not as terms
+                TokenType::Star | TokenType::Slash => {
+                    let prev = self.previous().clone();
+                    self.factor()?;
+                    return Err(Box::new(self::error::Error::new(
+                        self::error::ErrorKind::ExpectLeftOperand(prev),
+                    )));
+                }
+                TokenType::Less
+                | TokenType::LessEqual
+                | TokenType::Greater
+                | TokenType::GreaterEqual => {
+                    let prev = self.previous().clone();
+                    self.comparison()?;
+                    return Err(Box::new(self::error::Error::new(
+                        self::error::ErrorKind::ExpectLeftOperand(prev),
+                    )));
+                }
+                TokenType::BangEqual | TokenType::EqualEqual => {
+                    let prev = self.previous().clone();
+                    self.equality()?;
+                    return Err(Box::new(self::error::Error::new(
+                        self::error::ErrorKind::ExpectLeftOperand(prev),
+                    )));
+                }
+                TokenType::Plus => {
+                    let prev = self.previous().clone();
+                    self.term()?;
+                    return Err(Box::new(self::error::Error::new(
+                        self::error::ErrorKind::ExpectLeftOperand(prev),
+                    )));
                 }
                 _ => {
                     return Err(Box::new(self::error::Error::new(

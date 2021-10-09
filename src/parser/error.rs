@@ -18,9 +18,13 @@ impl Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.kind {
-            ErrorKind::UnmatchedParen(t) => write!(f, "expected ')' after expression"),
+            ErrorKind::UnmatchedParen(_) => write!(f, "expected ')' after expression"),
             ErrorKind::ExpectExpression(t) => {
                 write!(f, "unexpected expression `{:?}`", t.token_type)
+            }
+
+            ErrorKind::ExpectLeftOperand(t) => {
+                write!(f, "missing left operand for {:?}", t.token_type)
             }
         }
     }
@@ -30,4 +34,5 @@ impl fmt::Display for Error {
 pub enum ErrorKind {
     UnmatchedParen(Token),
     ExpectExpression(Token),
+    ExpectLeftOperand(Token),
 }
