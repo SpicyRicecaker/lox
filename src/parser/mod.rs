@@ -1,11 +1,11 @@
 use core::panic;
 pub mod error;
 
-use error::{Error, ErrorKind};
 use crate::{
     token::{Literal, Token, TokenType},
     tree::ast::{Binary, Expr, Grouping, Unary},
 };
+use error::{Error, ErrorKind};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -147,7 +147,9 @@ impl Parser {
         if self.check(token_type) {
             Ok(self.advance())
         } else {
-            Err(Box::new(Error::new(ErrorKind::UnmatchedParen(self.peek().clone()))))
+            Err(Box::new(Error::new(ErrorKind::UnmatchedParen(
+                self.peek().clone(),
+            ))))
         }
     }
     fn previous(&self) -> &Token {

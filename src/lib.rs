@@ -1,11 +1,11 @@
 use scanner::Scanner;
 use std::error::Error;
 
+pub mod error;
 pub mod parser;
 pub mod scanner;
 pub mod token;
 pub mod tree;
-pub mod error;
 
 pub fn main() -> Result<(), Box<dyn Error>> {
     let mut args = std::env::args();

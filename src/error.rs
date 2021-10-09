@@ -9,20 +9,30 @@ pub struct Error {
 
 impl Error {
     pub fn new(kind: ErrorKind) -> Self {
-        Self {
-            kind
-        }
+        Self { kind }
     }
 }
 
-impl std::error::Error for Error { }
+impl std::error::Error for Error {}
 
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
-            ErrorKind::UnterminatedComment(p) => write!(f, "Unterminated multi-line comment. Start begins at line {}, char {}", p.line, p.char),
-            ErrorKind::UnterminatedString(p) => write!(f, "Unterminated string. Quote begins at line {}, char {}", p.line, p.char),
-            ErrorKind::UnexpectedCharacter(p) => write!(f, "Unexpected character at line {}, char {}", p.line, p.char),
+            ErrorKind::UnterminatedComment(p) => write!(
+                f,
+                "Unterminated multi-line comment. Start begins at line {}, char {}",
+                p.line, p.char
+            ),
+            ErrorKind::UnterminatedString(p) => write!(
+                f,
+                "Unterminated string. Quote begins at line {}, char {}",
+                p.line, p.char
+            ),
+            ErrorKind::UnexpectedCharacter(p) => write!(
+                f,
+                "Unexpected character at line {}, char {}",
+                p.line, p.char
+            ),
         }
     }
 }
