@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use crate::token::{Token, TokenType};
 
 use super::ast::InspectorMut;
@@ -67,6 +65,12 @@ impl ReversePolishNotation {
             // push self to struct
             self.stack.push(token.clone());
         }
+    }
+}
+
+impl Default for ReversePolishNotation {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

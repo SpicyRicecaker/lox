@@ -1,5 +1,9 @@
-use crate::token::{Literal, Token, TokenType};
-use crate::Nenia;
+use crate::{
+    error::{ErrorKind, Position},
+    token::{Literal, Token, TokenType},
+};
+use core::panic;
+use std::error;
 pub struct Scanner {
     chars: Vec<char>,
     pub tokens: Vec<Token>,
@@ -26,10 +30,10 @@ impl Scanner {
         self.current >= self.chars.len()
     }
 
-    pub fn scan_tokens(&mut self) {
+    pub fn scan_tokens(&mut self) -> Result<(), Box<dyn error::Error>> {
         while !self.is_at_end() {
             self.start = self.current;
-            self.scan_token();
+            self.scan_token()?;
         }
 
         self.tokens.push(Token::new(
@@ -37,7 +41,9 @@ impl Scanner {
             String::new(),
             Literal::Nil,
             self.line,
-        ))
+        ));
+
+        Ok(())
     }
 
     fn advance(&mut self) -> &char {
@@ -56,55 +62,69 @@ impl Scanner {
         self.add_token_literal(token_type, Literal::Nil);
     }
 
-    fn scan_token(&mut self) {
-        match self.advance() {
+    fn scan_token(&mut self) -> Result<(), Box<dyn error::Error>> {
+        match *self.advance() {
             // fully single characters
-            '(' => self.add_token(TokenType::LeftParen),
-            ')' => self.add_token(TokenType::RightParen),
-            '{' => self.add_token(TokenType::LeftBrace),
-            '}' => self.add_token(TokenType::RightBrace),
-            ',' => self.add_token(TokenType::Comma),
-            '.' => self.add_token(TokenType::Dot),
-            '-' => self.add_token(TokenType::Minus),
-            '+' => self.add_token(TokenType::Plus),
-            ';' => self.add_token(TokenType::Semicolon),
-            '*' => self.add_token(TokenType::Star),
+            s @ ('(' | ')' | '{' | '}' | ',' | '.' | '-' | '+' | ';' | '*') => {
+                self.add_token(match s {
+                    '(' => TokenType::LeftParen,
+                    ')' => TokenType::RightParen,
+                    '{' => TokenType::LeftBrace,
+                    '}' => TokenType::RightBrace,
+                    ',' => TokenType::Comma,
+                    '.' => TokenType::Dot,
+                    '-' => TokenType::Minus,
+                    '+' => TokenType::Plus,
+                    ';' => TokenType::Semicolon,
+                    '*' => TokenType::Star,
+                    _ => panic!(),
+                });
+            }
             // possible doubled chars
             // looks really ugly and we could combine them but I can't think of a way not to use doubled match statements
-            '!' => {
-                let res = if self.next_is('=') {
-                    TokenType::BangEqual
-                } else {
-                    TokenType::Bang
+            d @ ('!' | '=' | '<' | '>') => {
+                let res = match d {
+                    '!' => {
+                        if self.next_is('=') {
+                            TokenType::BangEqual
+                        } else {
+                            TokenType::Bang
+                        }
+                    }
+                    '=' => {
+                        if self.next_is('=') {
+                            TokenType::EqualEqual
+                        } else {
+                            TokenType::Equal
+                        }
+                    }
+                    '<' => {
+                        if self.next_is('=') {
+                            TokenType::LessEqual
+                        } else {
+                            TokenType::Less
+                        }
+                    }
+                    '>' => {
+                        if self.next_is('=') {
+                            TokenType::GreaterEqual
+                        } else {
+                            TokenType::Greater
+                        }
+                    }
+                    _ => {
+                        panic!()
+                    }
                 };
                 self.add_token(res);
             }
-            '=' => {
-                let res = if self.next_is('=') {
-                    TokenType::EqualEqual
-                } else {
-                    TokenType::Equal
-                };
-                self.add_token(res);
-            }
-            '<' => {
-                let res = if self.next_is('=') {
-                    TokenType::LessEqual
-                } else {
-                    TokenType::Less
-                };
-                self.add_token(res);
-            }
-            '>' => {
-                let res = if self.next_is('=') {
-                    TokenType::GreaterEqual
-                } else {
-                    TokenType::Greater
-                };
-                self.add_token(res);
-            }
+            // any white space
+            w if w.is_whitespace() => {}
+            // newline
+            '\n' => self.line += 1,
             // special character, could be divide, but also could be a comment
             '/' => match self.peek() {
+                // Single line comment
                 '/' => {
                     // comment until end of line
                     // why not just use next is you ask? well next is always consumes, i thought conditionals were short circuiting but whatever
@@ -112,6 +132,7 @@ impl Scanner {
                         self.advance();
                     }
                 }
+                // Multiline line comment
                 '*' => {
                     let start_line = self.line;
                     // initiate stack
@@ -142,23 +163,13 @@ impl Scanner {
                         self.advance();
                     }
                     if self.is_at_end() {
-                        Nenia::error(
-                            self.line as u32,
-                            &format!(
-                                "Unterminated multi-line comment. Start begins at line {}, char {}",
-                                start_line, self.start
-                            ),
-                        )
+                        return Err(Box::new(crate::error::Error::new(
+                            ErrorKind::UnterminatedComment(Position::new(start_line, self.start)),
+                        )));
                     }
                 }
-                _ => {
-                    self.add_token(TokenType::Slash);
-                }
+                _ => self.add_token(TokenType::Slash),
             },
-            // any white space
-            w if w.is_whitespace() => {}
-            // newline
-            '\n' => self.line += 1,
             // string literals
             '"' => {
                 let start_line = self.line;
@@ -172,13 +183,9 @@ impl Scanner {
                 }
                 // check if string terminates at end of file w/o closing
                 if self.is_at_end() {
-                    Nenia::error(
-                        self.line as u32,
-                        &format!(
-                            "Unterminated string. Quote begins at line {}, char {}",
-                            start_line, self.start
-                        ),
-                    )
+                    return Err(Box::new(crate::error::Error::new(
+                        ErrorKind::UnterminatedString(Position::new(start_line, self.start)),
+                    )));
                 }
                 // advance one more time, since we stop at the quote
                 self.advance();
@@ -218,9 +225,12 @@ impl Scanner {
                 self.add_token(keyword_type(&text));
             }
             _ => {
-                Nenia::error(self.line as u32, "unexpected character.");
+                return Err(Box::new(crate::error::Error::new(
+                    ErrorKind::UnexpectedCharacter(Position::new(self.line, self.start)),
+                )));
             }
-        }
+        };
+        Ok(())
     }
 
     fn next_is(&mut self, expected: char) -> bool {

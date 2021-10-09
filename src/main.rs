@@ -1,4 +1,5 @@
-fn main() {
-    let mut nenia = nenia::Nenia::new();
-    nenia.main();
+fn main() -> Result<(), Box<dyn std::error::Error>>{
+    nenia::main()?;
+
+    Ok(())
 }

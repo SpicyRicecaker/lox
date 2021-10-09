@@ -8,13 +8,7 @@ pub struct Error {
     pub kind: ErrorKind,
 }
 
-impl error::Error for Error { 
-    fn description(&self) -> &str {
-        match self.kind {
-            
-        }
-    }
-}
+impl error::Error for Error { }
 
 impl Error {
     pub fn new(kind: ErrorKind) -> Error {
@@ -23,14 +17,14 @@ impl Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.kind {
-
+        match &self.kind {
+            ErrorKind::UnmatchedParen(t) => write!(f, "expected ')' after expression"),
         }
     }
 }
 
 #[derive(Debug)]
 pub enum ErrorKind {
-    Default(Token)
+    UnmatchedParen(Token)
 }
 
