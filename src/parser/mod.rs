@@ -1,9 +1,12 @@
 use core::panic;
+mod error;
 
 use crate::{
-    token::{self, Literal, Token, TokenType},
+    token::{Literal, Token, TokenType},
     tree::ast::{Binary, Expr, Grouping, Unary},
 };
+
+use self::error::Error;
 
 struct Parser {
     tokens: Vec<Token>,
@@ -138,6 +141,16 @@ impl Parser {
         }
     }
 
+    fn consume(&mut self, token_type: TokenType, message: &str) -> Result<&Token, Error> {
+        // if current is on token type
+        if self.check(token_type) {
+            Ok(self.advance())
+        } else {
+            Err(Error::new(self::error::ErrorKind::Default(
+                self.peek().clone(),
+            )))
+        }
+    }
     fn previous(&self) -> &Token {
         &self.tokens[self.current - 1]
     }
