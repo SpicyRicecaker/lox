@@ -19,7 +19,9 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.kind {
             ErrorKind::UnmatchedParen(t) => write!(f, "expected ')' after expression"),
-            ErrorKind::ExpectExpression => write!(f, "expected expression"),
+            ErrorKind::ExpectExpression(t) => {
+                write!(f, "unexpected expression `{:?}`", t.token_type)
+            }
         }
     }
 }
@@ -27,5 +29,5 @@ impl fmt::Display for Error {
 #[derive(Debug)]
 pub enum ErrorKind {
     UnmatchedParen(Token),
-    ExpectExpression,
+    ExpectExpression(Token),
 }

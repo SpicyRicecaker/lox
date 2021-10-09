@@ -1,5 +1,7 @@
 pub mod error;
 
+use core::panic;
+
 use crate::{
     ast::{Binary, Expr, Grouping, Unary},
     token::{Literal, Token, TokenType},
@@ -87,24 +89,37 @@ impl Parser {
         }
     }
     fn primary(&mut self) -> Result<Expr> {
-        let expr = match self.peek().token_type {
-            TokenType::False => Expr::Literal(Literal::Boolean(false)),
-            TokenType::True => Expr::Literal(Literal::Boolean(true)),
-            TokenType::Nil => Expr::Literal(Literal::Nil),
-            TokenType::Number | TokenType::String => Expr::Literal(self.previous().literal.clone()),
-            TokenType::LeftParen => {
-                let expr = self.expression()?;
-                self.consume(TokenType::RightParen)?;
-                Expr::Grouping(Grouping::new(Box::new(expr)))
-            }
-            _ => {
-                return Err(Box::new(self::error::Error::new(
-                    self::error::ErrorKind::ExpectExpression,
-                )))
-            }
-        };
-        self.advance();
-        Ok(expr)
+        if self.matches(&[
+            TokenType::False,
+            TokenType::True,
+            TokenType::Nil,
+            TokenType::Number,
+            TokenType::LeftParen,
+        ]) {
+            let expr = match self.previous().token_type {
+                TokenType::False => Expr::Literal(Literal::Boolean(false)),
+                TokenType::True => Expr::Literal(Literal::Boolean(true)),
+                TokenType::Nil => Expr::Literal(Literal::Nil),
+                TokenType::Number | TokenType::String => {
+                    Expr::Literal(self.previous().literal.clone())
+                }
+                TokenType::LeftParen => {
+                    let expr = self.expression()?;
+                    self.consume(TokenType::RightParen)?;
+                    Expr::Grouping(Grouping::new(Box::new(expr)))
+                }
+                _ => {
+                    return Err(Box::new(self::error::Error::new(
+                        self::error::ErrorKind::ExpectExpression(self.peek().clone()),
+                    )));
+                }
+            };
+            Ok(expr)
+        } else {
+            Err(Box::new(self::error::Error::new(
+                self::error::ErrorKind::ExpectExpression(self.peek().clone()),
+            )))
+        }
     }
 }
 
@@ -187,5 +202,16 @@ impl Parser {
             }
         }
         self.advance();
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn parse() {
+        match crate::run("1+1".to_string()) {
+            Ok(_) => {}
+            Err(e) => eprintln!("{}", e),
+        };
     }
 }

@@ -28,6 +28,8 @@ pub fn run(src: String) -> Result<(), Box<dyn Error>> {
     let mut scanner = Scanner::new(src);
     scanner.scan_tokens()?;
 
+    dbg!(&scanner.tokens);
+
     let mut parser = parser::Parser::new(scanner.tokens);
     match parser.parse() {
         Ok(ex) => println!("{}", Visitor::new().print(ex)),

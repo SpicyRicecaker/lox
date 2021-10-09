@@ -31,6 +31,12 @@ impl Visitor {
     }
 }
 
+impl Default for Visitor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Inspector for Visitor {
     fn visit_binary(&self, expr: &Binary) -> String {
         format!(
