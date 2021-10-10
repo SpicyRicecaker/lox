@@ -3,7 +3,7 @@ use crate::token::Literal;
 use super::{Binary, Expr, Grouping, Unary};
 
 impl Expr {
-    pub fn accept(&self, visitor: &Visitor) -> String {
+    pub fn accept_str(&self, visitor: &Visitor) -> String {
         match self {
             Expr::Literal(e) => visitor.visit_literal(e),
             Expr::Grouping(e) => visitor.visit_grouping(e),
@@ -13,11 +13,11 @@ impl Expr {
     }
 }
 
-pub trait Inspector {
-    fn visit_binary(&self, expr: &Binary) -> String;
-    fn visit_unary(&self, expr: &Unary) -> String;
-    fn visit_grouping(&self, expr: &Grouping) -> String;
-    fn visit_literal(&self, expr: &Literal) -> String;
+pub trait Inspector<T> {
+    fn visit_binary(&self, expr: &Binary) -> T;
+    fn visit_unary(&self, expr: &Unary) -> T;
+    fn visit_grouping(&self, expr: &Grouping) -> T;
+    fn visit_literal(&self, expr: &Literal) -> T;
 }
 
 pub struct Visitor;
@@ -27,7 +27,7 @@ impl Visitor {
         Visitor {}
     }
     pub fn print(&self, expr: Expr) -> String {
-        expr.accept(self)
+        expr.accept_str(self)
     }
 }
 
@@ -37,20 +37,20 @@ impl Default for Visitor {
     }
 }
 
-impl Inspector for Visitor {
+impl Inspector<String> for Visitor {
     fn visit_binary(&self, expr: &Binary) -> String {
         format!(
             "({} {} {})",
             expr.operator,
-            expr.left.accept(self),
-            expr.right.accept(self)
+            expr.left.accept_str(self),
+            expr.right.accept_str(self)
         )
     }
     fn visit_unary(&self, expr: &Unary) -> String {
-        format!("({} {})", expr.operator, expr.right.accept(self))
+        format!("({} {})", expr.operator, expr.right.accept_str(self))
     }
     fn visit_grouping(&self, expr: &Grouping) -> String {
-        format!("(group {})", expr.expression.accept(self))
+        format!("(group {})", expr.expression.accept_str(self))
     }
     fn visit_literal(&self, expr: &Literal) -> String {
         format!("{}", expr)

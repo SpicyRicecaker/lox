@@ -11,6 +11,7 @@ pub mod printer;
 
 use crate::token::Token;
 
+#[derive(Clone)]
 pub struct Binary {
     pub left: Box<Expr>,
     pub operator: Token,
@@ -27,6 +28,7 @@ impl Binary {
     }
 }
 
+#[derive(Clone)]
 pub struct Grouping {
     pub expression: Box<Expr>,
 }
@@ -37,6 +39,7 @@ impl Grouping {
     }
 }
 
+#[derive(Clone)]
 pub struct Unary {
     pub operator: Token,
     pub right: Box<Expr>,
@@ -48,6 +51,7 @@ impl Unary {
     }
 }
 
+#[derive(Clone)]
 pub enum Expr {
     // e.g. expression operator expression
     Literal(Literal),
