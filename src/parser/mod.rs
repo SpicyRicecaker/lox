@@ -87,6 +87,7 @@ impl Parser {
         }
     }
     fn primary(&mut self) -> Result<Expr> {
+        // TODO How do we get rid of this duplication zzz.
         if self.matches(&[
             TokenType::False,
             TokenType::True,
