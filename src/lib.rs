@@ -1,6 +1,7 @@
 use ast::printer::Visitor;
 use scanner::Scanner;
 use std::error::Error;
+use std::io::{self, Write};
 
 pub mod ast;
 pub mod error;
@@ -45,7 +46,8 @@ pub fn run_prompt() -> Result<(), Box<dyn Error>> {
     loop {
         let mut input = String::new();
         print!("> ");
-        std::io::stdin().read_line(&mut input)?;
+        io::stdout().flush()?;
+        io::stdin().read_line(&mut input)?;
         match &input.trim() {
             b if b.is_empty() => {
                 break;
