@@ -26,7 +26,7 @@ impl Visitor {
     pub fn new() -> Self {
         Visitor {}
     }
-    pub fn print(&self, expr: Expr) -> String {
+    pub fn print(&self, expr: &Expr) -> String {
         expr.accept_str(self)
     }
 }
@@ -76,7 +76,7 @@ mod test {
                 Literal::Number(45.67),
             ))))),
         ));
-        let str = Visitor::new().print(binary_expression);
+        let str = Visitor::new().print(&binary_expression);
 
         assert_eq!(str, "(* (- 123) (group 45.67))");
     }

@@ -1,11 +1,6 @@
 pub mod error;
-use std::convert::TryFrom;
-
 use crate::{
-    ast::{
-        printer::{Inspector, Visitor},
-        Binary, Expr, Grouping, Unary,
-    },
+    ast::{Binary, Expr, Grouping, Unary},
     token::{Literal, TokenType},
 };
 
@@ -16,6 +11,7 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 /// but the distinction is important to make because literals are in the parser's
 /// domain while objects are in the runtime domain
 /// We could theoretically also have classes and arbirary objects in the future
+#[derive(Debug, PartialEq)]
 pub enum Object {
     String(String),
     Number(f32),
@@ -39,12 +35,34 @@ impl InspectorResult<Object> for Interpreter {
         let left = self.evaluate(&expr.left)?;
         let right = self.evaluate(&expr.right)?;
 
-        match expr.operator.token_type {
-            TokenType::Minus => Ok(Object::Number(Self::try_num(left)? - Self::try_num(right)?)),
-            TokenType::Slash => Ok(Object::Number(Self::try_num(left)? / Self::try_num(right)?)),
-            TokenType::Star => Ok(Object::Number(Self::try_num(left)? * Self::try_num(right)?)),
+        use TokenType::*;
+
+        Ok(match expr.operator.token_type {
+            Minus => Object::Number(Self::try_num(left)? - Self::try_num(right)?),
+            Slash => Object::Number(Self::try_num(left)? / Self::try_num(right)?),
+            Star => Object::Number(Self::try_num(left)? * Self::try_num(right)?),
+            Plus => {
+                // deviation: too lazy to write errors for these things rn
+                match left {
+                    // Could use + operator to add numbers
+                    Object::Number(n) => Object::Number(n + Self::try_num(right)?),
+                    // Could also use + operator to concatenate strings
+                    Object::String(mut s) => {
+                        s.push_str(&Self::try_str(right)?);
+                        Object::String(s)
+                    }
+                    _ => panic!(),
+                }
+            }
+            Greater => Object::Boolean(Self::try_num(left)? > Self::try_num(right)?),
+            GreaterEqual => Object::Boolean(Self::try_num(left)? >= Self::try_num(right)?),
+            Less => Object::Boolean(Self::try_num(left)? < Self::try_num(right)?),
+            LessEqual => Object::Boolean(Self::try_num(left)? <= Self::try_num(right)?),
+            // TODO TODO TODO Not sure if derivce(PartialEq) handles enum comparisons automatically
+            BangEqual => Object::Boolean(left != right),
+            EqualEqual => Object::Boolean(left == right),
             _ => panic!(),
-        }
+        })
     }
 
     fn visit_unary(&self, expr: &Unary) -> Result<Object> {
@@ -87,9 +105,15 @@ pub trait InspectorResult<T> {
     fn visit_literal(&self, expr: &Literal) -> Result<T>;
 }
 
-struct Interpreter {}
+pub struct Interpreter;
 
 impl Interpreter {
+    pub fn interpret(&self, expr: &crate::ast::Expr) -> Result<()> {
+        let value = self.evaluate(expr)?;
+        // deviation: no stringify method here because rust uses `impl Display` instead
+        println!("{:#?}", value);
+        Ok(())
+    }
     fn evaluate(&self, expr: &crate::ast::Expr) -> Result<Object> {
         expr.accept(self)
     }

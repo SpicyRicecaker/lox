@@ -1,4 +1,5 @@
 use ast::printer::Visitor;
+use interpreter::Interpreter;
 use scanner::Scanner;
 use std::error::Error;
 use std::io::{self, Write};
@@ -26,7 +27,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub fn run(src: String) -> Result<(), Box<dyn Error>> {
+pub fn run(src: String, interpreter: &mut Interpreter) -> Result<(), Box<dyn Error>> {
     let mut scanner = Scanner::new(src);
     scanner.scan_tokens()?;
 
@@ -34,7 +35,10 @@ pub fn run(src: String) -> Result<(), Box<dyn Error>> {
 
     let mut parser = parser::Parser::new(scanner.tokens);
     match parser.parse() {
-        Ok(ex) => println!("{}", Visitor::new().print(ex)),
+        Ok(ex) => {
+            println!("{}", Visitor::new().print(&ex));
+            interpreter.interpret(&ex)?;
+        }
         Err(e) => eprintln!("An error occured while parsing tree: {}", e),
     };
 
@@ -43,6 +47,8 @@ pub fn run(src: String) -> Result<(), Box<dyn Error>> {
 
 // Interactive
 pub fn run_prompt() -> Result<(), Box<dyn Error>> {
+    // create interpreter
+    let mut interpreter = Interpreter {};
     loop {
         let mut input = String::new();
         print!("> ");
@@ -56,7 +62,7 @@ pub fn run_prompt() -> Result<(), Box<dyn Error>> {
                 break;
             }
             _ => {
-                run(input).expect("invalid input");
+                run(input, &mut interpreter).expect("invalid input");
             }
         }
     }
@@ -65,5 +71,6 @@ pub fn run_prompt() -> Result<(), Box<dyn Error>> {
 
 pub fn run_file(arg: &str) -> Result<(), Box<dyn Error>> {
     let content = std::fs::read_to_string(arg)?;
-    run(content)
+    let mut interpreter = Interpreter {};
+    run(content, &mut interpreter)
 }
