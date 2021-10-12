@@ -20,11 +20,15 @@ impl fmt::Display for Error {
         match &self.kind {
             ErrorKind::UnmatchedParen(_) => write!(f, "expected ')' after expression"),
             ErrorKind::ExpectExpression(t) => {
-                write!(f, "unexpected expression `{:?}`", t.token_type)
+                write!(
+                    f,
+                    "unexpected expression `{:?} {}` at line {}",
+                    t.token_type, t.literal, t.line
+                )
             }
 
             ErrorKind::ExpectLeftOperand(t) => {
-                write!(f, "missing left operand for {:?}", t.token_type)
+                write!(f, "missing left operand for `{:?} {}`", t.token_type, t.lexeme)
             }
         }
     }

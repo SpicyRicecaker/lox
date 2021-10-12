@@ -92,6 +92,7 @@ impl Parser {
             TokenType::True,
             TokenType::Nil,
             TokenType::Number,
+            TokenType::String,
             TokenType::LeftParen,
             // better error handling, no left operand
             // + 2
@@ -256,9 +257,12 @@ impl Parser {
 
 #[cfg(test)]
 mod test {
+    use crate::interpreter::Interpreter;
+
     #[test]
     fn parse() {
-        match crate::run("1+1".to_string()) {
+        let mut interpreter = Interpreter {};
+        match crate::run("1+1".to_string(),  &mut interpreter) {
             Ok(_) => {}
             Err(e) => eprintln!("{}", e),
         };
