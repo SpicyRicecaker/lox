@@ -1,4 +1,6 @@
 pub mod error;
+use std::fmt::Display;
+
 use crate::{
     ast::{Binary, Expr, Grouping, Unary},
     token::{Literal, TokenType},
@@ -17,6 +19,18 @@ pub enum Object {
     Number(f32),
     Boolean(bool),
     Nil,
+}
+
+impl Display for Object {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // not sure if the derefs are needed rn
+        match self {
+            Object::String(s) => write!(f, "{}", s),
+            Object::Number(n) => write!(f, "{}", *n),
+            Object::Boolean(b) => write!(f, "{}", *b),
+            Object::Nil => write!(f, "null"),
+        }
+    }
 }
 
 impl From<&Literal> for Object {
@@ -45,12 +59,12 @@ impl InspectorResult<Object> for Interpreter {
                 // deviation: too lazy to write errors for these things rn
                 match left {
                     // Could use + operator to add numbers
-                    Object::Number(n) => Object::Number(n + Self::try_num(right)?),
+                    Object::Number(n) => match right {
+                        Object::String(r) => Object::String(format!("{}{}", n, r)),
+                        _ => Object::Number(n + Self::try_num(right)?),
+                    },
                     // Could also use + operator to concatenate strings
-                    Object::String(mut s) => {
-                        s.push_str(&Self::try_str(right)?);
-                        Object::String(s)
-                    }
+                    Object::String(l) => Object::String(format!("{}{}", l, right)),
                     _ => panic!(),
                 }
             }
