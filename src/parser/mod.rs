@@ -13,9 +13,44 @@ pub struct Parser {
     current: usize,
 }
 
+enum Stmt {
+    Expr(Expr),
+    Print(Expr),
+}
+
 impl Parser {
-    pub fn parse(&mut self) -> Result<Expr> {
-        self.expression()
+    pub fn parse(&mut self) -> Result<Vec<Stmt>> {
+        // create vec of statements
+        let mut statements: Vec<Stmt> = Vec::new();
+
+        // as long as we're not at end of file
+        while !self.is_at_end() {
+            // make mo statements
+            statements.push(self.statement()?);
+        }
+
+        Ok(statements)
+    }
+
+    fn statement(&mut self) -> Result<Stmt> {
+        // check if it's a print statement
+        if self.matches(&[TokenType::Print]) {
+            self.print_statement()
+        } else {
+            self.expression_statement()
+        }
+    }
+
+    fn print_statement(&mut self) -> Result<Stmt> {
+        let value = self.expression()?;
+        self.consume(TokenType::Semicolon, Error::new(ErrorKind::ExpectSemicolon))?;
+        Ok(Stmt::Expr(value))
+    }
+
+    fn expression_statement(&mut self) -> Result<Stmt> {
+        let expr = self.expression()?;
+        self.consume(TokenType::Semicolon, Error::new(ErrorKind::ExpectSemicolon))?;
+        Ok(Stmt::Expr(expr))
     }
 
     fn recursive_descent(
@@ -124,7 +159,10 @@ impl Parser {
                 }
                 TokenType::LeftParen => {
                     let expr = self.expression()?;
-                    self.consume(TokenType::RightParen)?;
+                    self.consume(
+                        TokenType::RightParen,
+                        Error::new(ErrorKind::UnmatchedParen(self.peek().clone())),
+                    )?;
                     Expr::Grouping(Grouping::new(Box::new(expr)))
                 }
                 // Call factor to evaluate the rest of the statement as a factor, not as terms
@@ -215,14 +253,14 @@ impl Parser {
         }
     }
 
-    fn consume(&mut self, token_type: TokenType) -> Result<&Token> {
+    /// checks if current cursor is over a certain token type, consumes it if so otherwise errors
+    fn consume(&mut self, token_type: TokenType, error: Error) -> Result<&Token> {
         // if current is on token type
         if self.check(token_type) {
+            // iterate over it
             Ok(self.advance())
         } else {
-            Err(Box::new(Error::new(ErrorKind::UnmatchedParen(
-                self.peek().clone(),
-            ))))
+            Err(Box::new(error))
         }
     }
     fn previous(&self) -> &Token {
@@ -263,7 +301,7 @@ mod test {
     #[test]
     fn parse() {
         let mut interpreter = Interpreter {};
-        match crate::run("1+1".to_string(),  &mut interpreter) {
+        match crate::run("1+1".to_string(), &mut interpreter) {
             Ok(_) => {}
             Err(e) => eprintln!("{}", e),
         };

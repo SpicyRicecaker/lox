@@ -39,4 +39,5 @@ pub enum ErrorKind {
     UnmatchedParen(Token),
     ExpectExpression(Token),
     ExpectLeftOperand(Token),
+    ExpectSemicolon
 }
