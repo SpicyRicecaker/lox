@@ -19,6 +19,7 @@ impl fmt::Display for Error {
             ErrorKind::FailedCast => {
                 write!(f, "failed cast lol")
             }
+            ErrorKind::DivideByZero(n) => write!(f, "attempt to divide {} by 0", n),
         }
     }
 }
@@ -26,4 +27,5 @@ impl fmt::Display for Error {
 #[derive(Debug)]
 pub enum ErrorKind {
     FailedCast,
+    DivideByZero(f32)
 }

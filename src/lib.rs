@@ -62,7 +62,9 @@ pub fn run_prompt() -> Result<(), Box<dyn Error>> {
                 break;
             }
             _ => {
-                run(input, &mut interpreter).expect("invalid input");
+                if let Err(e) = run(input, &mut interpreter) {
+                    eprintln!("runtime error occured: {}", e);
+                };
             }
         }
     }

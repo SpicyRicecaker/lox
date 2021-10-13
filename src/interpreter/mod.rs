@@ -53,7 +53,15 @@ impl InspectorResult<Object> for Interpreter {
 
         Ok(match expr.operator.token_type {
             Minus => Object::Number(Self::try_num(left)? - Self::try_num(right)?),
-            Slash => Object::Number(Self::try_num(left)? / Self::try_num(right)?),
+            Slash => {
+                let right = Self::try_num(right)?;
+                let left = Self::try_num(left)?;
+                if right == 0.0 {
+                    return Err(Box::new(Error::new(ErrorKind::DivideByZero(left))));
+                } else {
+                    Object::Number(left / right)
+                }
+            }
             Star => Object::Number(Self::try_num(left)? * Self::try_num(right)?),
             Plus => {
                 // deviation: too lazy to write errors for these things rn
