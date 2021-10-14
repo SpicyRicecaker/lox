@@ -13,7 +13,8 @@ pub struct Parser {
     current: usize,
 }
 
-enum Stmt {
+#[derive(Debug)]
+pub enum Stmt {
     Expr(Expr),
     Print(Expr),
 }
@@ -41,12 +42,14 @@ impl Parser {
         }
     }
 
+    /// Generates print expr statement
     fn print_statement(&mut self) -> Result<Stmt> {
         let value = self.expression()?;
         self.consume(TokenType::Semicolon, Error::new(ErrorKind::ExpectSemicolon))?;
-        Ok(Stmt::Expr(value))
+        Ok(Stmt::Print(value))
     }
 
+    /// Generates stock expr statement 
     fn expression_statement(&mut self) -> Result<Stmt> {
         let expr = self.expression()?;
         self.consume(TokenType::Semicolon, Error::new(ErrorKind::ExpectSemicolon))?;

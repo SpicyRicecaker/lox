@@ -34,14 +34,8 @@ pub fn run(src: String, interpreter: &mut Interpreter) -> Result<(), Box<dyn Err
     dbg!(&scanner.tokens);
 
     let mut parser = parser::Parser::new(scanner.tokens);
-    match parser.parse() {
-        Ok(ex) => {
-            println!("{}", Visitor::new().print(&ex));
-            interpreter.interpret(&ex)?;
-        }
-        Err(e) => eprintln!("An error occured while parsing tree: {}", e),
-    };
-
+    let statements = parser.parse()?;
+    interpreter.interpret(statements)?;
     Ok(())
 }
 

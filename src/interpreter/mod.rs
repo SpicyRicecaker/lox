@@ -1,10 +1,7 @@
 pub mod error;
 use std::fmt::Display;
 
-use crate::{
-    ast::{Binary, Expr, Grouping, Unary},
-    token::{Literal, TokenType},
-};
+use crate::{ast::{Binary, Expr, Grouping, Unary}, parser::Stmt, token::{Literal, TokenType}};
 
 use self::error::{Error, ErrorKind};
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -127,14 +124,41 @@ pub trait InspectorResult<T> {
     fn visit_literal(&self, expr: &Literal) -> Result<T>;
 }
 
+pub trait Statement {
+    fn visit_expression_stmt(&self, stmt: &Expr) -> Result<()>;
+    fn visit_print_stmt(&self, stmt: &Expr) -> Result<()>;
+}
+
+impl Statement for Interpreter {
+    fn visit_expression_stmt(&self, stmt: &Expr) -> Result<()> {
+        println!("calling expression");
+        self.evaluate(stmt)?;
+        Ok(())
+    }
+
+    fn visit_print_stmt(&self, stmt: &Expr) -> Result<()> {
+        let val = self.evaluate(stmt)?;
+        println!("{}", val);
+        Ok(())
+    }
+}
+
 pub struct Interpreter;
 
 impl Interpreter {
-    pub fn interpret(&self, expr: &crate::ast::Expr) -> Result<()> {
-        let value = self.evaluate(expr)?;
+    pub fn accept(&self, stmt: &Stmt) -> Result<()> {
+        match stmt {
+            Stmt::Expr(e) => self.visit_expression_stmt(e),
+            Stmt::Print(e) => self.visit_print_stmt(e),
+        }
+    }
+    pub fn execute(&self, stmt: &Stmt) -> Result<()> {
+        self.accept(stmt)
+    }
+    pub fn interpret(&self, stmts: Vec<Stmt>) -> Result<()> {
+        // let value = self.evaluate(expr)?;
         // deviation: no stringify method here because rust uses `impl Display` instead
-        println!("{:#?}", value);
-        Ok(())
+        stmts.iter().try_for_each(|s| self.execute(s))
     }
     fn evaluate(&self, expr: &crate::ast::Expr) -> Result<Object> {
         expr.accept(self)

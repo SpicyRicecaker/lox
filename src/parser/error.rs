@@ -28,8 +28,13 @@ impl fmt::Display for Error {
             }
 
             ErrorKind::ExpectLeftOperand(t) => {
-                write!(f, "missing left operand for `{:?} {}`", t.token_type, t.lexeme)
+                write!(
+                    f,
+                    "missing left operand for `{:?} {}`",
+                    t.token_type, t.lexeme
+                )
             }
+            ErrorKind::ExpectSemicolon => write!(f, "missing semicolon"),
         }
     }
 }
@@ -39,5 +44,5 @@ pub enum ErrorKind {
     UnmatchedParen(Token),
     ExpectExpression(Token),
     ExpectLeftOperand(Token),
-    ExpectSemicolon
+    ExpectSemicolon,
 }
