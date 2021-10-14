@@ -49,7 +49,7 @@ impl Parser {
         Ok(Stmt::Print(value))
     }
 
-    /// Generates stock expr statement 
+    /// Generates stock expr statement
     fn expression_statement(&mut self) -> Result<Stmt> {
         let expr = self.expression()?;
         self.consume(TokenType::Semicolon, Error::new(ErrorKind::ExpectSemicolon))?;

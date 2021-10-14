@@ -32,6 +32,7 @@ impl Scanner {
 
     pub fn scan_tokens(&mut self) -> Result<(), Box<dyn error::Error>> {
         while !self.is_at_end() {
+            // Always remember the start position of the token, it's not modified anywhere else but here
             self.start = self.current;
             self.scan_token()?;
         }
@@ -118,6 +119,7 @@ impl Scanner {
                 };
                 self.add_token(res);
             }
+            // the very, very inefficient method of checking for keywords
             // 'p' => {
             //     let mut remaining = vec!['t', 'n', 'i', 'r'];
             //     // advance and consume until rint
@@ -232,10 +234,14 @@ impl Scanner {
                 self.add_token_literal(TokenType::Number, Literal::Number(float));
             }
             // letter = keywords, and user-defined variable names
+            // if the character is a letter, begin
             n if n.is_alphabetic() => {
+                // try to get the full word
                 while self.peek().is_alphanumeric() {
                     self.advance();
                 }
+                // then, match the full word. If it matches up with one of our keywords it's a keyword
+                // otherwise, it's an identifier!
                 let text = self.chars.substring(self.start, self.current);
                 self.add_token(keyword_type(&text));
             }

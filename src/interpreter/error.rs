@@ -27,5 +27,5 @@ impl fmt::Display for Error {
 #[derive(Debug)]
 pub enum ErrorKind {
     FailedCast,
-    DivideByZero(f32)
+    DivideByZero(f32),
 }

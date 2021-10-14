@@ -1,7 +1,11 @@
 pub mod error;
 use std::fmt::Display;
 
-use crate::{ast::{Binary, Expr, Grouping, Unary}, parser::Stmt, token::{Literal, TokenType}};
+use crate::{
+    ast::{Binary, Expr, Grouping, Unary},
+    parser::Stmt,
+    token::{Literal, TokenType},
+};
 
 use self::error::{Error, ErrorKind};
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;

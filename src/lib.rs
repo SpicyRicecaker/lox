@@ -31,7 +31,7 @@ pub fn run(src: String, interpreter: &mut Interpreter) -> Result<(), Box<dyn Err
     let mut scanner = Scanner::new(src);
     scanner.scan_tokens()?;
 
-    dbg!(&scanner.tokens);
+    // dbg!(&scanner.tokens);
 
     let mut parser = parser::Parser::new(scanner.tokens);
     let statements = parser.parse()?;
