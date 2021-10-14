@@ -72,7 +72,11 @@ impl Parser {
             // set the right to another comparison
             let right = func(self)?;
             // then append it
-            expr = Expr::Binary(Binary::new(Box::new(expr), operator, Box::new(right)));
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            };
         }
         Ok(expr)
     }
@@ -152,6 +156,8 @@ impl Parser {
             TokenType::BangEqual,
             // == 2
             TokenType::EqualEqual,
+            // [identifier]
+            TokenType::Identifier,
         ]) {
             let expr = match self.previous().token_type {
                 TokenType::False => Expr::Literal(Literal::Boolean(false)),

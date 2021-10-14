@@ -1,3 +1,4 @@
+use crate::parser::Stmt;
 use crate::token::Literal;
 mod challenge;
 pub mod printer;
@@ -12,53 +13,32 @@ pub mod printer;
 use crate::token::Token;
 
 #[derive(Debug, Clone)]
-pub struct Binary {
-    pub left: Box<Expr>,
-    pub operator: Token,
-    pub right: Box<Expr>,
-}
-
-impl Binary {
-    pub fn new(left: Box<Expr>, operator: Token, right: Box<Expr>) -> Self {
-        Binary {
-            left,
-            operator,
-            right,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Grouping {
-    pub expression: Box<Expr>,
-}
-
-impl Grouping {
-    pub fn new(expression: Box<Expr>) -> Self {
-        Grouping { expression }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Unary {
-    pub operator: Token,
-    pub right: Box<Expr>,
-}
-
-impl Unary {
-    pub fn new(operator: Token, right: Box<Expr>) -> Self {
-        Unary { operator, right }
-    }
-}
-
-#[derive(Debug, Clone)]
 pub enum Expr {
     // e.g. expression operator expression
     Literal(Literal),
     // e.g. "(" expression ")"
-    Grouping(Grouping),
+    Grouping {
+        expression: Box<Expr>,
+    },
     // e.g. "2323", 123
-    Binary(Binary),
+    Binary {
+        left: Box<Expr>,
+        operator: Token,
+        right: Box<Expr>,
+    },
     // e.g. ( "-" | "!" ) expression
-    Unary(Unary),
+    Unary {
+        operator: Token,
+        right: Box<Expr>,
+    },
+    //
+    Var {
+        name: Token,
+    },
+}
+
+#[derive(Debug)]
+pub enum Declaration {
+    Var { name: Token, initializer: Expr },
+    Stmt(Stmt),
 }
