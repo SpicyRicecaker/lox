@@ -1,7 +1,7 @@
 pub mod error;
 
 use crate::{
-    ast::{Binary, Expr, Grouping, Unary},
+    ast::{Expr, Stmt},
     token::{Literal, Token, TokenType},
 };
 use error::{Error, ErrorKind};
@@ -11,12 +11,6 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 pub struct Parser {
     tokens: Vec<Token>,
     current: usize,
-}
-
-#[derive(Debug)]
-pub enum Stmt {
-    Expr(Expr),
-    Print(Expr),
 }
 
 impl Parser {
@@ -123,7 +117,10 @@ impl Parser {
         if self.matches(&[TokenType::Bang, TokenType::Minus]) {
             let operator = self.previous().clone();
             let right = self.unary()?;
-            Ok(Expr::Unary(Unary::new(operator, Box::new(right))))
+            Ok(Expr::Unary {
+                operator,
+                right: Box::new(right),
+            })
         } else {
             Ok(self.primary()?)
         }
@@ -172,7 +169,9 @@ impl Parser {
                         TokenType::RightParen,
                         Error::new(ErrorKind::UnmatchedParen(self.peek().clone())),
                     )?;
-                    Expr::Grouping(Grouping::new(Box::new(expr)))
+                    Expr::Grouping {
+                        expression: Box::new(expr),
+                    }
                 }
                 // Call factor to evaluate the rest of the statement as a factor, not as terms
                 TokenType::Star | TokenType::Slash => {

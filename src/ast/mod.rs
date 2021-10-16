@@ -1,4 +1,3 @@
-use crate::parser::Stmt;
 use crate::token::Literal;
 mod challenge;
 pub mod printer;
@@ -41,4 +40,10 @@ pub enum Expr {
 pub enum Declaration {
     Var { name: Token, initializer: Expr },
     Stmt(Stmt),
+}
+
+#[derive(Debug)]
+pub enum Stmt {
+    Expr(Expr),
+    Print(Expr),
 }

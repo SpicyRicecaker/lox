@@ -74,26 +74,26 @@ impl Default for ReversePolishNotation {
 }
 
 impl InspectorMut for ReversePolishNotation {
-    fn visit_binary(&mut self, expr: &Binary) {
+    fn visit_binary(&mut self, left: &Expr, operator: &Token, right: &Expr) {
         // push nums to output always
-        expr.left.accept_mut(self);
-        self.push_operator(&expr.operator);
-        expr.right.accept_mut(self);
+        left.accept_mut(self);
+        self.push_operator(operator);
+        right.accept_mut(self);
     }
 
-    fn visit_unary(&mut self, expr: &Unary) {
-        self.push_operator(&expr.operator);
-        expr.right.accept_mut(self);
+    fn visit_unary(&mut self, operator: &Token, right: &Expr) {
+        self.push_operator(operator);
+        right.accept_mut(self);
     }
 
-    fn visit_grouping(&mut self, expr: &Grouping) {
+    fn visit_grouping(&mut self, expr: &Expr) {
         self.push_operator(&Token::new(
             TokenType::LeftParen,
             "(".to_string(),
             Literal::Nil,
             1,
         ));
-        expr.expression.accept_mut(self);
+        expr.accept_mut(self);
         self.push_operator(&Token::new(
             TokenType::RightParen,
             ")".to_string(),
@@ -112,16 +112,21 @@ impl Expr {
     pub fn accept_mut(&self, visitor: &mut challenge::ReversePolishNotation) {
         match self {
             Expr::Literal(e) => visitor.visit_literal(e),
-            Expr::Grouping(e) => visitor.visit_grouping(e),
-            Expr::Binary(e) => visitor.visit_binary(e),
-            Expr::Unary(e) => visitor.visit_unary(e),
+            Expr::Grouping { expression } => visitor.visit_grouping(expression),
+            Expr::Binary {
+                left,
+                operator,
+                right,
+            } => visitor.visit_binary(left, operator, right),
+            Expr::Unary { operator, right } => visitor.visit_unary(operator, right),
+            Expr::Var { name } => todo!(),
         }
     }
 }
 pub trait InspectorMut {
-    fn visit_binary(&mut self, expr: &Binary);
-    fn visit_unary(&mut self, expr: &Unary);
-    fn visit_grouping(&mut self, expr: &Grouping);
+    fn visit_binary(&mut self, left: &Expr, operator: &Token, right: &Expr);
+    fn visit_unary(&mut self, operator: &Token, right: &Expr);
+    fn visit_grouping(&mut self, expr: &Expr);
     fn visit_literal(&mut self, expr: &Literal);
 }
 
@@ -135,43 +140,70 @@ fn rpn() {
     let mut visitor = ReversePolishNotation::new();
 
     // create a new tree
-    let binary_expression = Expr::Binary(Binary::new(
-        Box::new(Expr::Binary(Binary::new(
-            Box::new(Expr::Literal(Literal::Number(1.0))),
-            Token::new(TokenType::Plus, "+".to_string(), Literal::Nil, 1),
-            Box::new(Expr::Literal(Literal::Number(2.0))),
-        ))),
-        Token::new(TokenType::Star, "*".to_string(), Literal::Nil, 1),
-        Box::new(Expr::Binary(Binary::new(
-            Box::new(Expr::Literal(Literal::Number(4.0))),
-            Token::new(TokenType::Minus, "-".to_string(), Literal::Nil, 1),
-            Box::new(Expr::Literal(Literal::Number(3.0))),
-        ))),
-    ));
+
+    let binary_expression = Expr::Binary {
+        left: Box::new(Expr::Binary {
+            left: Box::new(Expr::Literal(Literal::Number(1.0))),
+            operator: Token {
+                token_type: TokenType::Plus,
+                lexeme: "+".to_string(),
+                literal: Literal::Nil,
+                line: 1,
+            },
+            right: Box::new(Expr::Literal(Literal::Number(2.0))),
+        }),
+        operator: Token {
+            token_type: TokenType::Star,
+            lexeme: "*".to_string(),
+            literal: Literal::Nil,
+            line: 1,
+        },
+        right: Box::new(Expr::Binary {
+            left: Box::new(Expr::Literal(Literal::Number(4.0))),
+            operator: Token {
+                token_type: TokenType::Minus,
+                lexeme: "-".to_string(),
+                literal: Literal::Nil,
+                line: 1,
+            },
+            right: Box::new(Expr::Literal(Literal::Number(3.0))),
+        }),
+    };
 
     binary_expression.accept_mut(&mut visitor);
 
     assert_eq!(visitor.output(), "1 2 4 * + 3 -");
 
-    let grouping = Expr::Binary(Binary::new(
-        Box::new(Expr::Grouping(Grouping::new(Box::new(Expr::Binary(
-            Binary::new(
-                Box::new(Expr::Literal(Literal::Number(1.0))),
-                Token::new(TokenType::Plus, "+".to_string(), Literal::Nil, 1),
-                Box::new(Expr::Literal(Literal::Number(2.0))),
-            ),
-        ))))),
-        Token::new(TokenType::Star, "*".to_string(), Literal::Nil, 1),
-        Box::new(Expr::Grouping(Grouping::new(Box::new(Expr::Binary(
-            Binary::new(
-                Box::new(Expr::Literal(Literal::Number(4.0))),
-                Token::new(TokenType::Plus, "-".to_string(), Literal::Nil, 1),
-                Box::new(Expr::Literal(Literal::Number(3.0))),
-            ),
-        ))))),
-    ));
+    // let grouping = Expr::Binary {
+    //     left: Box::new(Expr::Binary {
+    //         left: Box::new(Expr::Literal(Literal::Number(1.0))),
+    //         operator: Token {
+    //             token_type: TokenType::Plus,
+    //             lexeme: "+".to_string(),
+    //             literal: Literal::Nil,
+    //             line: 1,
+    //         },
+    //         right: Box::new(Expr::Literal(Literal::Number(2.0))),
+    //     }),
+    //     operator: Token {
+    //         token_type: TokenType::Star,
+    //         lexeme: "*".to_string(),
+    //         literal: Literal::Nil,
+    //         line: 1,
+    //     },
+    //     right: Box::new(Expr::Binary {
+    //         left: Box::new(Expr::Literal(Literal::Number(4.0))),
+    //         operator: Token {
+    //             token_type: TokenType::Minus,
+    //             lexeme: "-".to_string(),
+    //             literal: Literal::Nil,
+    //             line: 1,
+    //         },
+    //         right: Box::new(Expr::Literal(Literal::Number(3.0))),
+    //     }),
+    // };
 
-    grouping.accept_mut(&mut visitor);
+    // grouping.accept_mut(&mut visitor);
 
-    assert_eq!(visitor.output(), "1 2 + 4 3 - *");
+    // assert_eq!(visitor.output(), "1 2 + 4 3 - *");
 }

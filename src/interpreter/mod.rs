@@ -1,11 +1,7 @@
 pub mod error;
 use std::fmt::Display;
 
-use crate::{
-    ast::{Binary, Expr, Grouping, Unary},
-    parser::Stmt,
-    token::{Literal, TokenType},
-};
+use crate::{ast::{Expr, Stmt}, token::{Literal, Token, TokenType}};
 
 use self::error::{Error, ErrorKind};
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -46,13 +42,13 @@ impl From<&Literal> for Object {
 }
 
 impl InspectorResult<Object> for Interpreter {
-    fn visit_binary(&self, expr: &Binary) -> Result<Object> {
-        let left = self.evaluate(&expr.left)?;
-        let right = self.evaluate(&expr.right)?;
+    fn visit_binary(&self, left: &Expr, operator: &Token, right: &Expr) -> Result<Object> {
+        let left = self.evaluate(left)?;
+        let right = self.evaluate(right)?;
 
         use TokenType::*;
 
-        Ok(match expr.operator.token_type {
+        Ok(match operator.token_type {
             Minus => Object::Number(Self::try_num(left)? - Self::try_num(right)?),
             Slash => {
                 let right = Self::try_num(right)?;
@@ -88,18 +84,18 @@ impl InspectorResult<Object> for Interpreter {
         })
     }
 
-    fn visit_unary(&self, expr: &Unary) -> Result<Object> {
+    fn visit_unary(&self, operator: &Token, right: &Expr) -> Result<Object> {
         // format!("({} {})", expr.operator, expr.right.accept_str(self))
-        let right = expr.right.accept(self)?;
+        let right = right.accept(self)?;
 
-        match expr.operator.token_type {
+        match operator.token_type {
             TokenType::Minus => Ok(Object::Number(-Self::try_num(right)?)),
             TokenType::Bang => Ok(Object::Boolean(!Self::is_truthy(&right))),
             _ => panic!("Invalid unary type, unreachable"),
         }
     }
-    fn visit_grouping(&self, expr: &Grouping) -> Result<Object> {
-        self.evaluate(&expr.expression)
+    fn visit_grouping(&self, expr: &Expr) -> Result<Object> {
+        self.evaluate(expr)
     }
     fn visit_literal(&self, expr: &Literal) -> Result<Object> {
         Ok(Object::from(expr))
@@ -114,17 +110,18 @@ impl Expr {
     {
         match self {
             Expr::Literal(e) => visitor.visit_literal(e),
-            Expr::Grouping(e) => visitor.visit_grouping(e),
-            Expr::Binary(e) => visitor.visit_binary(e),
-            Expr::Unary(e) => visitor.visit_unary(e),
+            Expr::Grouping { expression } => visitor.visit_grouping(expression),
+            Expr::Binary { left, operator, right } => visitor.visit_binary(left, operator, right),
+            Expr::Unary { operator, right } => visitor.visit_unary(operator, right),
+            Expr::Var { name } => todo!(),
         }
     }
 }
 
 pub trait InspectorResult<T> {
-    fn visit_binary(&self, expr: &Binary) -> Result<T>;
-    fn visit_unary(&self, expr: &Unary) -> Result<T>;
-    fn visit_grouping(&self, expr: &Grouping) -> Result<T>;
+    fn visit_binary(&self, left: &Expr, operator: &Token, right: &Expr) -> Result<T>;
+    fn visit_unary(&self, operator: &Token, right: &Expr) -> Result<T>;
+    fn visit_grouping(&self, expr: &Expr) -> Result<T>;
     fn visit_literal(&self, expr: &Literal) -> Result<T>;
 }
 
