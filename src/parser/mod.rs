@@ -21,10 +21,46 @@ impl Parser {
         // as long as we're not at end of file
         while !self.is_at_end() {
             // make mo statements
-            statements.push(self.statement()?);
+            let declaration = match self.declaration() {
+                Ok(d) => d,
+                Err(e) => {
+                    // synchronize (e.g. ignore all other errors in the statement)
+                    self.synchronize();
+                    return Err(e);
+                }
+            };
+            statements.push(declaration);
         }
+        println!("{:?}", statements);
 
         Ok(statements)
+    }
+
+    fn declaration(&mut self) -> Result<Stmt> {
+        if self.matches(&[TokenType::Var]) {
+            self.var_declaration()
+        } else {
+            self.statement()
+        }
+    }
+
+    fn var_declaration(&mut self) -> Result<Stmt> {
+        let name = self
+            .consume(
+                TokenType::Identifier,
+                Error::new(ErrorKind::ExpectVariableName),
+            )?
+            .clone();
+
+        let mut initializer = Expr::Null;
+
+        if self.matches(&[TokenType::Equal]) {
+            initializer = self.expression()?;
+        }
+
+        self.consume(TokenType::Semicolon, Error::new(ErrorKind::ExpectSemicolon))?;
+
+        Ok(Stmt::Var { name, initializer })
     }
 
     fn statement(&mut self) -> Result<Stmt> {
@@ -163,6 +199,10 @@ impl Parser {
                 TokenType::Number | TokenType::String => {
                     Expr::Literal(self.previous().literal.clone())
                 }
+                // in `var apple = 2;`, the name token would just be the previous, which would then match apple!
+                TokenType::Var => Expr::Variable {
+                    name: self.previous().clone(),
+                },
                 TokenType::LeftParen => {
                     let expr = self.expression()?;
                     self.consume(
@@ -288,8 +328,8 @@ impl Parser {
 
             match self.peek().token_type {
                 TokenType::Class
-                | TokenType::Fn
-                | TokenType::Let
+                | TokenType::Func
+                | TokenType::Var
                 | TokenType::For
                 | TokenType::If
                 | TokenType::While
@@ -308,7 +348,7 @@ mod test {
 
     #[test]
     fn parse() {
-        let mut interpreter = Interpreter {};
+        let mut interpreter = Interpreter::new();
         match crate::run("1+1".to_string(), &mut interpreter) {
             Ok(_) => {}
             Err(e) => eprintln!("{}", e),

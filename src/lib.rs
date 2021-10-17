@@ -5,6 +5,7 @@ use std::error::Error;
 use std::io::{self, Write};
 
 pub mod ast;
+pub mod environment;
 pub mod error;
 pub mod interpreter;
 pub mod parser;
@@ -42,7 +43,7 @@ pub fn run(src: String, interpreter: &mut Interpreter) -> Result<(), Box<dyn Err
 // Interactive
 pub fn run_prompt() -> Result<(), Box<dyn Error>> {
     // create interpreter
-    let mut interpreter = Interpreter {};
+    let mut interpreter = Interpreter::new();
     loop {
         let mut input = String::new();
         print!("> ");
@@ -67,6 +68,6 @@ pub fn run_prompt() -> Result<(), Box<dyn Error>> {
 
 pub fn run_file(arg: &str) -> Result<(), Box<dyn Error>> {
     let content = std::fs::read_to_string(arg)?;
-    let mut interpreter = Interpreter {};
+    let mut interpreter = Interpreter::new();
     run(content, &mut interpreter)
 }

@@ -302,7 +302,7 @@ fn keyword_type(str: &str) -> TokenType {
         "class" => TokenType::Class,
         "else" => TokenType::Else,
         "false" => TokenType::False,
-        "fn" => TokenType::Fn,
+        "func" => TokenType::Func,
         "if" => TokenType::If,
         "nil" => TokenType::Nil,
         "or" => TokenType::Or,
@@ -311,7 +311,7 @@ fn keyword_type(str: &str) -> TokenType {
         "super" => TokenType::Super,
         "this" => TokenType::This,
         "true" => TokenType::True,
-        "let" => TokenType::Let,
+        "var" => TokenType::Var,
         "while" => TokenType::While,
         // If it's not any of the above keyworks, let it be a user-defined name lol
         _ => TokenType::Identifier,

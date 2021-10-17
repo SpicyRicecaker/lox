@@ -11,7 +11,7 @@ pub mod printer;
 
 use crate::token::Token;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     // e.g. expression operator expression
     Literal(Literal),
@@ -30,20 +30,23 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
-    //
-    Var {
+    // E.g. [IDENTIFIER] accesses a variable
+    Variable {
         name: Token,
     },
+    // null
+    Null,
 }
 
-#[derive(Debug)]
-pub enum Declaration {
-    Var { name: Token, initializer: Expr },
-    Stmt(Stmt),
-}
+// #[derive(Debug)]
+// pub enum Declaration {
+//     Var { name: Token, initializer: Expr },
+//     Stmt(Stmt),
+// }
 
 #[derive(Debug)]
 pub enum Stmt {
     Expr(Expr),
     Print(Expr),
+    Var { name: Token, initializer: Expr },
 }

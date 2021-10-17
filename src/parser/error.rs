@@ -35,6 +35,7 @@ impl fmt::Display for Error {
                 )
             }
             ErrorKind::ExpectSemicolon => write!(f, "missing semicolon"),
+            ErrorKind::ExpectVariableName => write!(f, "expect variable name"),
         }
     }
 }
@@ -44,5 +45,6 @@ pub enum ErrorKind {
     UnmatchedParen(Token),
     ExpectExpression(Token),
     ExpectLeftOperand(Token),
+    ExpectVariableName,
     ExpectSemicolon,
 }

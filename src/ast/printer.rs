@@ -13,7 +13,8 @@ impl Expr {
                 right,
             } => visitor.visit_binary(left, operator, right),
             Expr::Unary { operator, right } => visitor.visit_unary(operator, right),
-            Expr::Var { name } => todo!(),
+            Expr::Variable { name } => todo!(),
+            Expr::Null => panic!("shouldn't happen"),
         }
     }
 }

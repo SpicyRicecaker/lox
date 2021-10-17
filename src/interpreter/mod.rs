@@ -1,7 +1,11 @@
 pub mod error;
 use std::fmt::Display;
 
-use crate::{ast::{Expr, Stmt}, token::{Literal, Token, TokenType}};
+use crate::{
+    ast::{Expr, Stmt},
+    environment::Environment,
+    token::{Literal, Token, TokenType},
+};
 
 use self::error::{Error, ErrorKind};
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -100,20 +104,29 @@ impl InspectorResult<Object> for Interpreter {
     fn visit_literal(&self, expr: &Literal) -> Result<Object> {
         Ok(Object::from(expr))
     }
+
+    fn visit_variable(&mut self, name: &Token) -> Result<&mut Object> {
+        self.environment.get(name)
+    }
 }
 
 impl Expr {
     /// Duplicate method but I can't figure out how to separate into String and Objects atm
-    pub fn accept<T>(&self, visitor: &T) -> Result<Object>
+    pub fn accept<T>(&mut self, visitor: &T) -> Result<&mut Object>
     where
         T: InspectorResult<Object>,
     {
         match self {
             Expr::Literal(e) => visitor.visit_literal(e),
             Expr::Grouping { expression } => visitor.visit_grouping(expression),
-            Expr::Binary { left, operator, right } => visitor.visit_binary(left, operator, right),
+            Expr::Binary {
+                left,
+                operator,
+                right,
+            } => visitor.visit_binary(left, operator, right),
             Expr::Unary { operator, right } => visitor.visit_unary(operator, right),
-            Expr::Var { name } => todo!(),
+            Expr::Variable { name } => visitor.visit_variable(name),
+            Expr::Null => panic!("shouldn't be null expr"),
         }
     }
 }
@@ -121,13 +134,15 @@ impl Expr {
 pub trait InspectorResult<T> {
     fn visit_binary(&self, left: &Expr, operator: &Token, right: &Expr) -> Result<T>;
     fn visit_unary(&self, operator: &Token, right: &Expr) -> Result<T>;
-    fn visit_grouping(&self, expr: &Expr) -> Result<T>;
-    fn visit_literal(&self, expr: &Literal) -> Result<T>;
+    fn visit_grouping(&self, expr: &Expr) -> Result<&mut T>;
+    fn visit_literal(&mut self, expr: &Literal) -> Result<&mut T>;
+    fn visit_variable(&mut self, name: &Token) -> Result<&mut T>;
 }
 
 pub trait Statement {
     fn visit_expression_stmt(&self, stmt: &Expr) -> Result<()>;
     fn visit_print_stmt(&self, stmt: &Expr) -> Result<()>;
+    fn visit_var_stmt(&mut self, name: &Token, initializer: &Expr) -> Result<()>;
 }
 
 impl Statement for Interpreter {
@@ -142,21 +157,40 @@ impl Statement for Interpreter {
         println!("{}", val);
         Ok(())
     }
+
+    fn visit_var_stmt(&mut self, name: &Token, initializer: &Expr) -> Result<()> {
+        let obj = match initializer {
+            Expr::Null => Object::Nil,
+            _ => self.evaluate(initializer)?,
+        };
+
+        self.environment.define(&name.lexeme, obj);
+
+        Ok(())
+    }
 }
 
-pub struct Interpreter;
+pub struct Interpreter {
+    environment: Environment,
+}
 
 impl Interpreter {
-    pub fn accept(&self, stmt: &Stmt) -> Result<()> {
+    pub fn new() -> Self {
+        Interpreter {
+            environment: Environment::new(),
+        }
+    }
+    pub fn accept(&mut self, stmt: &Stmt) -> Result<()> {
         match stmt {
             Stmt::Expr(e) => self.visit_expression_stmt(e),
             Stmt::Print(e) => self.visit_print_stmt(e),
+            Stmt::Var { name, initializer } => self.visit_var_stmt(name, initializer),
         }
     }
-    pub fn execute(&self, stmt: &Stmt) -> Result<()> {
+    pub fn execute(&mut self, stmt: &Stmt) -> Result<()> {
         self.accept(stmt)
     }
-    pub fn interpret(&self, stmts: Vec<Stmt>) -> Result<()> {
+    pub fn interpret(&mut self, stmts: Vec<Stmt>) -> Result<()> {
         // let value = self.evaluate(expr)?;
         // deviation: no stringify method here because rust uses `impl Display` instead
         stmts.iter().try_for_each(|s| self.execute(s))
@@ -191,5 +225,11 @@ impl Interpreter {
         } else {
             Err(Box::new(Error::new(ErrorKind::FailedCast)))
         }
+    }
+}
+
+impl Default for Interpreter {
+    fn default() -> Self {
+        Self::new()
     }
 }

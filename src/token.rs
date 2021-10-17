@@ -31,7 +31,7 @@ pub enum TokenType {
     Class,
     Else,
     False,
-    Fn,
+    Func,
     For,
     If,
     Nil,
@@ -41,13 +41,13 @@ pub enum TokenType {
     Super,
     This,
     True,
-    Let,
+    Var,
     While,
     // eof
     Eof,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Literal {
     String(String),
     Number(f32),
@@ -66,7 +66,7 @@ impl fmt::Display for Literal {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: String,
