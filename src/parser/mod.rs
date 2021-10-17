@@ -31,7 +31,7 @@ impl Parser {
             };
             statements.push(declaration);
         }
-        println!("{:?}", statements);
+        // eprintln!("{:?}", statements);
 
         Ok(statements)
     }
@@ -200,7 +200,7 @@ impl Parser {
                     Expr::Literal(self.previous().literal.clone())
                 }
                 // in `var apple = 2;`, the name token would just be the previous, which would then match apple!
-                TokenType::Var => Expr::Variable {
+                TokenType::Identifier => Expr::Variable {
                     name: self.previous().clone(),
                 },
                 TokenType::LeftParen => {
@@ -344,11 +344,11 @@ impl Parser {
 
 #[cfg(test)]
 mod test {
-    use crate::interpreter::Interpreter;
+    use crate::interpreter::InterpreterVisitor;
 
     #[test]
     fn parse() {
-        let mut interpreter = Interpreter::new();
+        let mut interpreter = InterpreterVisitor::new();
         match crate::run("1+1".to_string(), &mut interpreter) {
             Ok(_) => {}
             Err(e) => eprintln!("{}", e),

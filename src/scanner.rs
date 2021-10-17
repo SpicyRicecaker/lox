@@ -119,22 +119,6 @@ impl Scanner {
                 };
                 self.add_token(res);
             }
-            // the very, very inefficient method of checking for keywords
-            // 'p' => {
-            //     let mut remaining = vec!['t', 'n', 'i', 'r'];
-            //     // advance and consume until rint
-            //     while let Some(c) = remaining.pop() {
-            //         if self.peek() == c {
-            //             self.advance();
-            //         } else {
-            //             break;
-            //         }
-            //     }
-            //     if remaining.is_empty() {
-            //         println!("print token added");
-            //         self.add_token(TokenType::Print);
-            //     }
-            // }
             // any white space
             w if w.is_whitespace() => {}
             // newline
