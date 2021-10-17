@@ -1,5 +1,4 @@
-use ast::printer::Visitor;
-use interpreter::Interpreter;
+use interpreter::InterpreterVisitor;
 use scanner::Scanner;
 use std::error::Error;
 use std::io::{self, Write};
@@ -28,11 +27,10 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub fn run(src: String, interpreter: &mut Interpreter) -> Result<(), Box<dyn Error>> {
+pub fn run(src: String, interpreter: &mut InterpreterVisitor) -> Result<(), Box<dyn Error>> {
     let mut scanner = Scanner::new(src);
     scanner.scan_tokens()?;
 
-    // dbg!(&scanner.tokens);
 
     let mut parser = parser::Parser::new(scanner.tokens);
     let statements = parser.parse()?;
@@ -43,7 +41,7 @@ pub fn run(src: String, interpreter: &mut Interpreter) -> Result<(), Box<dyn Err
 // Interactive
 pub fn run_prompt() -> Result<(), Box<dyn Error>> {
     // create interpreter
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = InterpreterVisitor::new();
     loop {
         let mut input = String::new();
         print!("> ");
@@ -68,6 +66,6 @@ pub fn run_prompt() -> Result<(), Box<dyn Error>> {
 
 pub fn run_file(arg: &str) -> Result<(), Box<dyn Error>> {
     let content = std::fs::read_to_string(arg)?;
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = InterpreterVisitor::new();
     run(content, &mut interpreter)
 }

@@ -8,6 +8,7 @@ pub mod error;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
+#[derive(Debug)]
 pub struct Environment {
     values: HashMap<String, Object>,
 }
@@ -21,8 +22,8 @@ impl Environment {
     pub fn define(&mut self, name: &str, obj: Object) {
         self.values.insert(name.to_string(), obj);
     }
-    pub fn get(&mut self, name: &Token) -> Result<&mut Object> {
-        if let Some(obj) = self.values.get_mut(&name.lexeme) {
+    pub fn get(&self, name: &Token) -> Result<&Object> {
+        if let Some(obj) = self.values.get(&name.lexeme) {
             Ok(obj)
         } else {
             Err(Box::new(RuntimeError::new(ErrorKind::UndefinedVariable(

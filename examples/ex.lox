@@ -1,3 +1,2 @@
-print 2 + 2;
-print 2 + 3;
-true;
+var b = 2 + 2 + 2;
+print b * 2;

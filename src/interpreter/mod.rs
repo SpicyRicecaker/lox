@@ -13,7 +13,7 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 /// but the distinction is important to make because literals are in the parser's
 /// domain while objects are in the runtime domain
 /// We could theoretically also have classes and arbirary objects in the future
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Object {
     String(String),
     Number(f32),
@@ -44,7 +44,7 @@ impl From<&Literal> for Object {
     }
 }
 
-impl InspectorResult<Object> for Interpreter {
+impl TreeVisitor<Object> for InterpreterVisitor {
     fn visit_binary(&self, left: &Expr, operator: &Token, right: &Expr) -> Result<Object> {
         let left = self.evaluate(left)?;
         let right = self.evaluate(right)?;
@@ -104,16 +104,16 @@ impl InspectorResult<Object> for Interpreter {
         Ok(Object::from(expr))
     }
 
-    fn visit_variable(&mut self, name: &Token) -> Result<&mut Object> {
-        self.environment.get(name)
+    fn visit_variable(&self, name: &Token) -> Result<Object> {
+        Ok(self.environment.get(name)?.clone())
     }
 }
 
 impl Expr {
     /// Duplicate method but I can't figure out how to separate into String and Objects atm
-    pub fn accept<T>(&mut self, visitor: &T) -> Result<&mut Object>
+    pub fn accept<T>(&self, visitor: &T) -> Result<Object>
     where
-        T: InspectorResult<Object>,
+        T: TreeVisitor<Object>,
     {
         match self {
             Expr::Literal(e) => visitor.visit_literal(e),
@@ -130,21 +130,22 @@ impl Expr {
     }
 }
 
-pub trait InspectorResult<T> {
+pub trait TreeVisitor<T> {
     fn visit_binary(&self, left: &Expr, operator: &Token, right: &Expr) -> Result<T>;
     fn visit_unary(&self, operator: &Token, right: &Expr) -> Result<T>;
-    fn visit_grouping(&self, expr: &Expr) -> Result<&mut T>;
-    fn visit_literal(&mut self, expr: &Literal) -> Result<&mut T>;
-    fn visit_variable(&mut self, name: &Token) -> Result<&mut T>;
+    fn visit_grouping(&self, expr: &Expr) -> Result<T>;
+    fn visit_literal(&self, expr: &Literal) -> Result<T>;
+    fn visit_variable(&self, name: &Token) -> Result<T>;
 }
 
-pub trait Statement {
+/// Statement is a debuggin print thing
+pub trait StatementVisitor {
     fn visit_expression_stmt(&self, stmt: &Expr) -> Result<()>;
     fn visit_print_stmt(&self, stmt: &Expr) -> Result<()>;
     fn visit_var_stmt(&mut self, name: &Token, initializer: &Expr) -> Result<()>;
 }
 
-impl Statement for Interpreter {
+impl StatementVisitor for InterpreterVisitor {
     fn visit_expression_stmt(&self, stmt: &Expr) -> Result<()> {
         println!("calling expression");
         self.evaluate(stmt)?;
@@ -169,13 +170,13 @@ impl Statement for Interpreter {
     }
 }
 
-pub struct Interpreter {
+pub struct InterpreterVisitor {
     environment: Environment,
 }
 
-impl Interpreter {
+impl InterpreterVisitor {
     pub fn new() -> Self {
-        Interpreter {
+        InterpreterVisitor {
             environment: Environment::new(),
         }
     }
@@ -227,7 +228,7 @@ impl Interpreter {
     }
 }
 
-impl Default for Interpreter {
+impl Default for InterpreterVisitor {
     fn default() -> Self {
         Self::new()
     }
