@@ -3,7 +3,6 @@ use std::fmt::Display;
 
 use crate::{
     ast::{Expr, Stmt},
-    environment::Environment,
     token::{Literal, Token, TokenType},
 };
 
