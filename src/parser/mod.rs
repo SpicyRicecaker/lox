@@ -114,7 +114,32 @@ impl Parser {
     /// ranked in order of precedence (lowest precedence to highest precedence)
     /// expression just counts as equality, we theoretically don't need expression, but it reads better
     fn expression(&mut self) -> Result<Expr> {
-        self.equality()
+        self.assignment()
+    }
+
+    fn assignment(&mut self) -> Result<Expr> {
+        // parse the left-hand side
+        let expr = self.equality()?;
+
+        // if we find an equals after the left-hand side,
+        // wrap it all up in an assignment expression
+        if self.matches(&[TokenType::Equal]) {
+            let equals = self.previous();
+            // right-associative recursion is ok
+            let value = self.assignment()?;
+
+            if let Expr::Variable { name } = expr {
+                Ok(Expr::Assign {
+                    name,
+                    value: Box::new(value),
+                })
+            } else {
+                Err(Box::new(Error::new(ErrorKind::InvalidAssign)))
+            }
+        } else {
+            // otherwise just return the expr
+            Ok(expr)
+        }
     }
 
     /// `==` and `!=`, we can multiple of these in a sentence so

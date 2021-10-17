@@ -31,6 +31,16 @@ impl Environment {
             ))))
         }
     }
+    pub fn assign(&mut self, name: &Token, obj: Object) -> Result<()> {
+        if let Some(v) = self.values.get_mut(&name.lexeme) {
+            *v = obj;
+            Ok(())
+        } else {
+            Err(Box::new(RuntimeError::new(ErrorKind::UndefinedVariable(
+                name.clone(),
+            ))))
+        }
+    }
 }
 
 impl Default for Environment {

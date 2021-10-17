@@ -19,6 +19,10 @@ pub enum Expr {
     Grouping {
         expression: Box<Expr>,
     },
+    Assign {
+        name: Token,
+        value: Box<Expr>,
+    },
     // e.g. "2323", 123
     Binary {
         left: Box<Expr>,
@@ -38,14 +42,9 @@ pub enum Expr {
     Null,
 }
 
-// #[derive(Debug)]
-// pub enum Declaration {
-//     Var { name: Token, initializer: Expr },
-//     Stmt(Stmt),
-// }
-
 #[derive(Debug)]
 pub enum Stmt {
     Expr(Expr),
     Print(Expr),
+    Var { name: Token, initializer: Expr },
 }
