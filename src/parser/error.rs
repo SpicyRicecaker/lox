@@ -19,6 +19,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.kind {
             ErrorKind::UnmatchedParen(_) => write!(f, "expected ')' after expression"),
+            ErrorKind::UnmatchedBrace(_) => write!(f, "expected '}}' after {{"),
             ErrorKind::ExpectExpression(t) => {
                 write!(
                     f,
@@ -44,6 +45,7 @@ impl fmt::Display for Error {
 #[derive(Debug)]
 pub enum ErrorKind {
     UnmatchedParen(Token),
+    UnmatchedBrace(Token),
     ExpectExpression(Token),
     ExpectLeftOperand(Token),
     ExpectVariableName,

@@ -47,4 +47,5 @@ pub enum Stmt {
     Expr(Expr),
     Print(Expr),
     Var { name: Token, initializer: Expr },
+    Block { statements: Vec<Stmt> },
 }
