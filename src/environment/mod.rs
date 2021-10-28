@@ -21,12 +21,26 @@ where
     arena: Vec<Node<T>>,
 }
 
-impl <T> Arena<T>
+impl<T> Arena<T>
 where
     T: PartialEq,
 {
-    fn get(&self, id: usize) -> &Node<T> {
+    pub fn get(&self, id: usize) -> &Node<T> {
         &self.arena[id]
+    }
+    pub fn get_mut(&mut self, id: usize) -> &mut Node<T> {
+        &mut self.arena[id]
+    }
+    pub fn push_new_node(&mut self, val: T) -> usize {
+        let idx = self.arena.len();
+
+        self.push(Node {
+            idx,
+            val,
+            parent: None,
+        });
+
+        idx
     }
     fn push(&mut self, node: Node<T>) {
         self.arena.push(node)
@@ -35,7 +49,7 @@ where
 
 pub struct Node<T> {
     idx: usize,
-    val: T,
+    pub val: T,
     parent: Option<usize>,
 }
 
