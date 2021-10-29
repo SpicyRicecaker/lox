@@ -25,8 +25,8 @@ impl<T> Arena<T>
 where
     T: PartialEq,
 {
-    pub fn get(&self, id: usize) -> &Node<T> {
-        &self.arena[id]
+    pub fn get(&self, id: usize) -> Option<&Node<T>> {
+        self.arena.get(id)
     }
     pub fn get_mut(&mut self, id: usize) -> &mut Node<T> {
         &mut self.arena[id]
@@ -58,25 +58,30 @@ pub struct Environment {
     values: HashMap<String, Object>,
 }
 
-impl Environment {
-    pub fn new() -> Self {
-        Environment {
-            values: HashMap::new(),
-        }
-    }
+impl Node<Environment> {
+    // pub fn new() -> Self {
+    //     Environment {
+    //         values: HashMap::new(),
+    //     }
+    // }
     pub fn define(&mut self, name: &str, obj: Object) {
-        self.values.insert(name.to_string(), obj);
+        self.val.values.insert(name.to_string(), obj);
     }
     /// Lookup has to be recursive and look at all parents (enclosing scopes)
-    pub fn get(&self, name: &Token) -> Result<&Object> {
-        if let Some(id) = &self.parent {
-            arena.nodes[*id].get(name, arena)
-        } else if let Some(obj) = self.values.get(&name.lexeme) {
-            Ok(obj)
+    pub fn get<'a>(&'a self, name: &Token, arena: &'a Arena<Environment>) -> Result<&Object> {
+        // First get the current environment reference, from the arena
+        // Next check if the current environment holds such a name
+        if let Some(n) = self.val.values.get(&name.lexeme) {
+            Ok(n)
         } else {
-            Err(Box::new(RuntimeError::new(ErrorKind::UndefinedVariable(
-                name.clone(),
-            ))))
+            // otherwise, recurse with the parent
+            if let Some(p) = self.parent {
+                arena.get(p).unwrap().get(name, arena)
+            } else {
+                Err(Box::new(RuntimeError::new(ErrorKind::UndefinedVariable(
+                    name.clone(),
+                ))))
+            }
         }
     }
     pub fn assign(&mut self, name: &Token, obj: Object) -> Result<()> {
