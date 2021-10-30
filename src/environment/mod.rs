@@ -1,9 +1,4 @@
-use std::{
-    borrow::Borrow,
-    cell::{Ref, RefCell},
-    collections::HashMap,
-    rc::Rc,
-};
+use std::{collections::HashMap, slice::SliceIndex};
 
 use crate::{interpreter::Object, token::Token};
 
@@ -25,16 +20,19 @@ impl<T> Arena<T>
 where
     T: PartialEq,
 {
+    pub fn new() -> Self {
+        Self { arena: Vec::new() }
+    }
     pub fn get(&self, id: usize) -> Option<&Node<T>> {
         self.arena.get(id)
     }
-    pub fn get_mut(&mut self, id: usize) -> &mut Node<T> {
-        &mut self.arena[id]
+    pub fn get_mut(&mut self, id: usize) -> Option<&mut Node<T>> {
+        self.arena.get_mut(id)
     }
-    pub fn push_new_node(&mut self, val: T) -> usize {
+    pub fn push(&mut self, val: T) -> usize {
         let idx = self.arena.len();
 
-        self.push(Node {
+        self.push_node(Node {
             idx,
             val,
             parent: None,
@@ -42,11 +40,70 @@ where
 
         idx
     }
-    fn push(&mut self, node: Node<T>) {
+    fn push_node(&mut self, node: Node<T>) {
         self.arena.push(node)
     }
 }
 
+/// Define a wrapper around `Arena<T>`, since the above implementation is pretty widespread
+/// We call it `Cactus` (short for `CactusStack`), a name for `Parent-Pointer Tree`
+struct Cactus {
+    arena: Arena<Environment>,
+    cur_env: usize,
+}
+
+impl Cactus {
+    pub fn new() -> Self {
+        let mut arena = Arena::new();
+        let cur_env = arena.push(Environment::new());
+        Cactus {
+            arena: Arena::new(),
+            cur_env,
+        }
+    }
+
+    /// Lookup has to be recursive and look at all parents (enclosing scopes)
+    pub fn get(&self, name: &Token, cur_env: usize) -> Result<&Object> {
+        // First get the current environment reference, from the arena
+        // Next check if the current environment holds such a name
+        // get current env
+        let env = self.arena.get(cur_env).unwrap();
+        if let Some(n) = env.val.values.get(&name.lexeme) {
+            Ok(n)
+        // otherwise, recurse with the parent
+        } else if let Some(p) = env.parent {
+            // unwrap here, because we assume that arena does hold the parent
+            self.get(name, p)
+        } else {
+            Err(Box::new(RuntimeError::new(ErrorKind::UndefinedVariable(
+                name.clone(),
+            ))))
+        }
+    }
+    /// This func is essentially the same as `.get()` except we don't return anything so we don't have to worry about lifetimes
+    pub fn assign(
+        &mut self,
+        name: &Token,
+        obj: Object,
+        cur_env: usize
+    ) -> Result<()> {
+        let env = self.arena.get_mut(cur_env).unwrap();
+        // first check if the current environment holds the variable
+        if let Some(enclosing) = env.val.values.get(&name.lexeme) {
+            *enclosing = obj;
+            Ok(())
+        } else if let Some(p) = env.parent {
+            // unwrap, because we assume arena holds the parent
+            self.assign(name, obj, p)
+        } else {
+            Err(Box::new(RuntimeError::new(ErrorKind::UndefinedVariable(
+                name.clone(),
+            ))))
+        }
+    }
+}
+
+#[derive(PartialEq)]
 pub struct Node<T> {
     idx: usize,
     pub val: T,
@@ -69,40 +126,6 @@ impl Environment {
 impl Node<Environment> {
     pub fn define(&mut self, name: &str, obj: Object) {
         self.val.values.insert(name.to_string(), obj);
-    }
-    /// Lookup has to be recursive and look at all parents (enclosing scopes)
-    pub fn get<'a>(&'a self, name: &Token, arena: &'a Arena<Environment>) -> Result<&Object> {
-        // First get the current environment reference, from the arena
-        // Next check if the current environment holds such a name
-        if let Some(n) = self.val.values.get(&name.lexeme) {
-            Ok(n)
-        // otherwise, recurse with the parent
-        } else if let Some(p) = self.parent {
-            arena.get(p).unwrap().get(name, arena)
-        } else {
-            Err(Box::new(RuntimeError::new(ErrorKind::UndefinedVariable(
-                name.clone(),
-            ))))
-        }
-    }
-    /// This func is essentially the same as `.get()` except we don't return anything so we don't have to worry about lifetimes
-    pub fn assign(
-        &mut self,
-        name: &Token,
-        obj: Object,
-        arena: &mut Arena<Environment>,
-    ) -> Result<()> {
-        // first check if the current environment holds the variable
-        if let Some(enclosing) = self.val.values.get_mut(&name.lexeme) {
-            *enclosing = obj;
-            Ok(())
-        } else if let Some(p) = self.parent {
-            arena.get(p).unwrap().assign(name, obj, arena)
-        } else {
-            Err(Box::new(RuntimeError::new(ErrorKind::UndefinedVariable(
-                name.clone(),
-            ))))
-        }
     }
 }
 

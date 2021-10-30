@@ -185,7 +185,7 @@ pub struct InterpreterVisitor {
 impl InterpreterVisitor {
     pub fn new() -> Self {
         let mut tree = Arena {arena: Vec::new()};
-        let idx = tree.push_new_node(Environment::new());
+        let idx = tree.push(Environment::new());
 
         InterpreterVisitor {
             tree,
@@ -242,7 +242,7 @@ impl InterpreterVisitor {
     }
 
     fn env(&mut self, idx: usize) -> &mut Node<Environment> {
-        self.tree.get_mut(idx)
+        self.tree.get_mut(idx).unwrap()
     }
     fn get_curr_env_mut(&mut self) -> &mut Node<Environment> {
         self.env(self.curr_env)
@@ -251,7 +251,7 @@ impl InterpreterVisitor {
     fn visit_block(&mut self, statements: &[Stmt]) -> Result<()> {
         // try setting current environment to block
 
-        self.curr_env = self.tree.push_new_node(Environment::new());
+        self.curr_env = self.tree.push(Environment::new());
 
         statements.iter().try_for_each(|s| {
             self.accept(s)

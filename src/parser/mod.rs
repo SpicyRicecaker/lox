@@ -63,28 +63,35 @@ impl Parser {
         Ok(Stmt::Var { name, initializer })
     }
 
-    fn block(&mut self) -> Result<Vec<Stmt>> {
-        let statements = Vec::new();
+    fn block(&mut self) -> Result<Stmt> {
+        // create a new vec of statements
+        let mut statements = Vec::new();
 
+        // keep consuming tokens until we get to a right brace
         while self.check(TokenType::RightBrace) && self.is_at_end() {
+            // push it onto the vec
             statements.push(self.declaration()?);
         }
 
+        // Then consume the right bracket
         self.consume(
             TokenType::RightBrace,
             Error::new(ErrorKind::UnmatchedBrace(self.peek().clone())),
         );
 
-        Ok(statements)
+        // Return our statements
+        Ok(Stmt::Block { statements })
     }
 
     fn statement(&mut self) -> Result<Stmt> {
         // check if it's a print statement
         if self.matches(&[TokenType::Print]) {
             self.print_statement()
+        // check if its a block
         } else if self.matches(&[TokenType::LeftBrace]) {
             self.block()
         } else {
+            // otherwise just treat it as an extension
             self.expression_statement()
         }
     }
