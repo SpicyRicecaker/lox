@@ -58,12 +58,15 @@ pub struct Environment {
     values: HashMap<String, Object>,
 }
 
+impl Environment {
+    pub fn new() -> Self {
+        Environment {
+            values: HashMap::new(),
+        }
+    }
+}
+
 impl Node<Environment> {
-    // pub fn new() -> Self {
-    //     Environment {
-    //         values: HashMap::new(),
-    //     }
-    // }
     pub fn define(&mut self, name: &str, obj: Object) {
         self.val.values.insert(name.to_string(), obj);
     }
@@ -73,24 +76,28 @@ impl Node<Environment> {
         // Next check if the current environment holds such a name
         if let Some(n) = self.val.values.get(&name.lexeme) {
             Ok(n)
+        // otherwise, recurse with the parent
+        } else if let Some(p) = self.parent {
+            arena.get(p).unwrap().get(name, arena)
         } else {
-            // otherwise, recurse with the parent
-            if let Some(p) = self.parent {
-                arena.get(p).unwrap().get(name, arena)
-            } else {
-                Err(Box::new(RuntimeError::new(ErrorKind::UndefinedVariable(
-                    name.clone(),
-                ))))
-            }
+            Err(Box::new(RuntimeError::new(ErrorKind::UndefinedVariable(
+                name.clone(),
+            ))))
         }
     }
-    pub fn assign(&mut self, name: &Token, obj: Object) -> Result<()> {
-        if let Some(enclosing) = &mut self.enclosing {
-            enclosing.borrow_mut().assign(name, obj);
+    /// This func is essentially the same as `.get()` except we don't return anything so we don't have to worry about lifetimes
+    pub fn assign(
+        &mut self,
+        name: &Token,
+        obj: Object,
+        arena: &mut Arena<Environment>,
+    ) -> Result<()> {
+        // first check if the current environment holds the variable
+        if let Some(enclosing) = self.val.values.get_mut(&name.lexeme) {
+            *enclosing = obj;
             Ok(())
-        } else if let Some(v) = self.values.get_mut(&name.lexeme) {
-            *v = obj;
-            Ok(())
+        } else if let Some(p) = self.parent {
+            arena.get(p).unwrap().assign(name, obj, arena)
         } else {
             Err(Box::new(RuntimeError::new(ErrorKind::UndefinedVariable(
                 name.clone(),

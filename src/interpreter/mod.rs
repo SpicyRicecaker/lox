@@ -102,12 +102,12 @@ impl TreeVisitor<Object> for InterpreterVisitor {
     }
 
     fn visit_variable(&self, name: &Token) -> Result<Object> {
-        Ok(self.env(self.curr_env).val.get(name)?.clone())
+        Ok(self.env(self.curr_env).get(name, &self.tree)?.clone())
     }
 
     fn visit_assign_expr(&mut self, name: &Token, value: &Expr) -> Result<Object> {
         let value = self.evaluate(value)?;
-        self.get_curr_env_mut().val.assign(name, value.clone())?;
+        self.get_curr_env_mut().assign(name, value.clone(), &mut self.tree)?;
         Ok(value)
     }
 }
@@ -169,7 +169,7 @@ impl StatementVisitor for InterpreterVisitor {
             _ => self.evaluate(initializer)?,
         };
 
-        self.get_curr_env_mut().val.define(&name.lexeme, obj);
+        self.get_curr_env_mut().define(&name.lexeme, obj);
 
         Ok(())
     }
