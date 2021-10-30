@@ -47,9 +47,9 @@ where
 
 /// Define a wrapper around `Arena<T>`, since the above implementation is pretty widespread
 /// We call it `Cactus` (short for `CactusStack`), a name for `Parent-Pointer Tree`
-struct Cactus {
-    arena: Arena<Environment>,
-    cur_env: usize,
+pub struct Cactus {
+    pub arena: Arena<Environment>,
+    pub cur_env: usize,
 }
 
 impl Cactus {
@@ -62,7 +62,13 @@ impl Cactus {
         }
     }
 
+    pub fn define(&mut self, name: &str, obj: Object, cur_env: usize) {
+        let node = self.arena.get_mut(cur_env).unwrap();
+        node.define(name, obj);
+    }
+
     /// Lookup has to be recursive and look at all parents (enclosing scopes)
+    /// TODO could get rid of the `.unwrap` to make it more idiomatic 
     pub fn get(&self, name: &Token, cur_env: usize) -> Result<&Object> {
         // First get the current environment reference, from the arena
         // Next check if the current environment holds such a name
@@ -89,7 +95,7 @@ impl Cactus {
     ) -> Result<()> {
         let env = self.arena.get_mut(cur_env).unwrap();
         // first check if the current environment holds the variable
-        if let Some(enclosing) = env.val.values.get(&name.lexeme) {
+        if let Some(enclosing) = env.val.values.get_mut(&name.lexeme) {
             *enclosing = obj;
             Ok(())
         } else if let Some(p) = env.parent {

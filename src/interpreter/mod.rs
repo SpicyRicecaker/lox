@@ -1,7 +1,7 @@
 pub mod error;
 use std::fmt::Display;
 
-use crate::{ast::{Expr, Stmt}, environment::{Arena, Environment, Node}, token::{Literal, Token, TokenType}};
+use crate::{ast::{Expr, Stmt}, environment::{Arena, Cactus, Environment, Node}, token::{Literal, Token, TokenType}};
 
 use self::error::{Error, ErrorKind};
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -102,12 +102,12 @@ impl TreeVisitor<Object> for InterpreterVisitor {
     }
 
     fn visit_variable(&self, name: &Token) -> Result<Object> {
-        Ok(self.env(self.curr_env).get(name, &self.tree)?.clone())
+        Ok(self.cactus.get(name, self.curr_env)?.clone())
     }
 
     fn visit_assign_expr(&mut self, name: &Token, value: &Expr) -> Result<Object> {
         let value = self.evaluate(value)?;
-        self.get_curr_env_mut().assign(name, value.clone(), &mut self.tree)?;
+        self.cactus.assign(name, value.clone(), self.curr_env)?;
         Ok(value)
     }
 }
@@ -169,7 +169,7 @@ impl StatementVisitor for InterpreterVisitor {
             _ => self.evaluate(initializer)?,
         };
 
-        self.get_curr_env_mut().define(&name.lexeme, obj);
+        self.cactus.define(&name.lexeme, obj, self.curr_env);
 
         Ok(())
     }
@@ -177,20 +177,22 @@ impl StatementVisitor for InterpreterVisitor {
 
 
 pub struct InterpreterVisitor {
-    tree: Arena<Environment>,
+    cactus: Cactus,
     global_env: usize,
     curr_env: usize,
 }
 
 impl InterpreterVisitor {
     pub fn new() -> Self {
-        let mut tree = Arena {arena: Vec::new()};
-        let idx = tree.push(Environment::new());
+        let cactus = Cactus::new();
+        let curr_env = cactus.cur_env;
+        // let mut tree = Arena {arena: Vec::new()};
+        // let idx = tree.push(Environment::new());
 
         InterpreterVisitor {
-            tree,
-            global_env: idx,
-            curr_env: idx,
+            cactus,
+            global_env: curr_env,
+            curr_env,
         }
     }
     pub fn accept(&mut self, stmt: &Stmt) -> Result<()> {
@@ -241,17 +243,17 @@ impl InterpreterVisitor {
         }
     }
 
-    fn env(&mut self, idx: usize) -> &mut Node<Environment> {
-        self.tree.get_mut(idx).unwrap()
-    }
-    fn get_curr_env_mut(&mut self) -> &mut Node<Environment> {
-        self.env(self.curr_env)
-    }
+    // fn env(&mut self, idx: usize) -> &mut Node<Environment> {
+    //     self.tree.get_mut(idx).unwrap()
+    // }
+    // fn get_curr_env_mut(&mut self) -> &mut Node<Environment> {
+    //     self.env(self.curr_env)
+    // }
 
     fn visit_block(&mut self, statements: &[Stmt]) -> Result<()> {
         // try setting current environment to block
 
-        self.curr_env = self.tree.push(Environment::new());
+        self.curr_env = self.cactus.arena.push(Environment::new());
 
         statements.iter().try_for_each(|s| {
             self.accept(s)
