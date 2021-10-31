@@ -83,7 +83,7 @@ impl Cactus {
     }
 
     /// Lookup has to be recursive and look at all parents (enclosing scopes)
-    /// TODO could get rid of the `.unwrap` to make it more idiomatic 
+    /// TODO could get rid of the `.unwrap` to make it more idiomatic
     pub fn get(&self, name: &Token, cur_env: usize) -> Result<&Object> {
         // First get the current environment reference, from the arena
         // Next check if the current environment holds such a name
@@ -102,12 +102,7 @@ impl Cactus {
         }
     }
     /// This func is essentially the same as `.get()` except we don't return anything so we don't have to worry about lifetimes
-    pub fn assign(
-        &mut self,
-        name: &Token,
-        obj: Object,
-        cur_env: usize
-    ) -> Result<()> {
+    pub fn assign(&mut self, name: &Token, obj: Object, cur_env: usize) -> Result<()> {
         let env = self.arena.get_mut(cur_env).unwrap();
         // first check if the current environment holds the variable
         if let Some(enclosing) = env.val.values.get_mut(&name.lexeme) {

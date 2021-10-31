@@ -1,7 +1,11 @@
 pub mod error;
 use std::fmt::Display;
 
-use crate::{ast::{Expr, Stmt}, environment::{Arena, Cactus, Environment, Node}, token::{Literal, Token, TokenType}};
+use crate::{
+    ast::{Expr, Stmt},
+    environment::{Arena, Cactus, Environment, Node},
+    token::{Literal, Token, TokenType},
+};
 
 use self::error::{Error, ErrorKind};
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -175,7 +179,6 @@ impl StatementVisitor for InterpreterVisitor {
     }
 }
 
-
 pub struct InterpreterVisitor {
     cactus: Cactus,
     global_env: usize,
@@ -255,9 +258,7 @@ impl InterpreterVisitor {
         n.parent = Some(previous);
 
         // Execute all the statements
-        statements.iter().try_for_each(|s| {
-            self.accept(s)
-        })?;
+        statements.iter().try_for_each(|s| self.accept(s))?;
 
         println!("actually executing statmenet");
 
