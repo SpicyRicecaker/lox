@@ -204,6 +204,7 @@ impl InterpreterVisitor {
         }
     }
     pub fn execute(&mut self, stmt: &Stmt) -> Result<()> {
+        println!("executing statements??");
         self.accept(stmt)
     }
     pub fn interpret(&mut self, stmts: Vec<Stmt>) -> Result<()> {
@@ -243,22 +244,32 @@ impl InterpreterVisitor {
         }
     }
 
-    // fn env(&mut self, idx: usize) -> &mut Node<Environment> {
-    //     self.tree.get_mut(idx).unwrap()
-    // }
-    // fn get_curr_env_mut(&mut self) -> &mut Node<Environment> {
-    //     self.env(self.curr_env)
-    // }
-
     fn visit_block(&mut self, statements: &[Stmt]) -> Result<()> {
-        // try setting current environment to block
-
+        // remember current environment
+        let previous = self.curr_env;
+        // Create a new environment for the current block
+        // TODO could probably have push return `Node<ID>`
         self.curr_env = self.cactus.arena.push(Environment::new());
+        // set current environment's parent to previous
+        let n = self.cactus.arena.get_mut(self.curr_env).unwrap();
+        n.parent = Some(previous);
 
+        // Execute all the statements
         statements.iter().try_for_each(|s| {
             self.accept(s)
-        });
+        })?;
 
+        println!("actually executing statmenet");
+
+        // Reset environment
+
+        // Remove latest node from vec. Because of how a parent-pointer tree (or cactus stack works) this probably always pops the child
+        // **probably**
+        self.cactus.arena.pop();
+        // Reset parent
+        self.curr_env = previous;
+
+        // Set environment to self.current
         Ok(())
     }
 }

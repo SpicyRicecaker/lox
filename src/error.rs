@@ -6,7 +6,6 @@ pub struct Error {
 }
 
 // impl std::error::Error for Error { }
-
 impl Error {
     pub fn new(kind: ErrorKind) -> Self {
         Self { kind }

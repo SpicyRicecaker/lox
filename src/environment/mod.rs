@@ -26,6 +26,12 @@ where
     pub fn get(&self, id: usize) -> Option<&Node<T>> {
         self.arena.get(id)
     }
+    pub fn pop(&mut self) {
+        self.arena.pop();
+    }
+    pub fn remove(&mut self, id: usize) {
+        self.arena.remove(id);
+    }
     pub fn get_mut(&mut self, id: usize) -> Option<&mut Node<T>> {
         self.arena.get_mut(id)
     }
@@ -42,6 +48,15 @@ where
     }
     fn push_node(&mut self, node: Node<T>) {
         self.arena.push(node)
+    }
+}
+
+impl<T> Default for Arena<T>
+where
+    T: PartialEq,
+{
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -109,11 +124,17 @@ impl Cactus {
     }
 }
 
+impl Default for Cactus {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(PartialEq)]
 pub struct Node<T> {
     idx: usize,
     pub val: T,
-    parent: Option<usize>,
+    pub parent: Option<usize>,
 }
 
 #[derive(Debug, PartialEq)]

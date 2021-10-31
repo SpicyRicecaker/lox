@@ -28,11 +28,13 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn run(src: String, interpreter: &mut InterpreterVisitor) -> Result<(), Box<dyn Error>> {
+    println!("running");
     let mut scanner = Scanner::new(src);
     scanner.scan_tokens()?;
 
     let mut parser = parser::Parser::new(scanner.tokens);
     let statements = parser.parse()?;
+    dbg!(&statements);
     interpreter.interpret(statements)?;
     Ok(())
 }

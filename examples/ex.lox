@@ -1,2 +1,7 @@
-var b = 2 + 2 + 2;
-print b * 2;
+// var b = 2 + 2 + 2;
+// {
+//     print b * 2;
+// }
+var b = 2;
+print 2;
+print 2222;

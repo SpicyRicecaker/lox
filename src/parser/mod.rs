@@ -31,7 +31,7 @@ impl Parser {
             };
             statements.push(declaration);
         }
-        // eprintln!("{:?}", statements);
+        eprintln!("{:?}", statements);
 
         Ok(statements)
     }
@@ -77,7 +77,7 @@ impl Parser {
         self.consume(
             TokenType::RightBrace,
             Error::new(ErrorKind::UnmatchedBrace(self.peek().clone())),
-        );
+        )?;
 
         // Return our statements
         Ok(Stmt::Block { statements })
@@ -371,6 +371,7 @@ impl Parser {
         self.advance();
 
         while !self.is_at_end() {
+            println!("12");
             if self.previous().token_type == TokenType::Semicolon {
                 return;
             }
@@ -386,8 +387,8 @@ impl Parser {
                 | TokenType::Return => return,
                 _ => {}
             }
+            self.advance();
         }
-        self.advance();
     }
 }
 
