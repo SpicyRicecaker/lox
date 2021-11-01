@@ -3,7 +3,7 @@ use std::fmt::Display;
 
 use crate::{
     ast::{Expr, Stmt},
-    environment::{Arena, Cactus, Environment, Node},
+    environment::{Cactus, Environment},
     token::{Literal, Token, TokenType},
 };
 
@@ -182,7 +182,7 @@ impl StatementVisitor for InterpreterVisitor {
 
 pub struct InterpreterVisitor {
     cactus: Cactus,
-    global_env: usize,
+    // global_env: usize,
     curr_env: usize,
 }
 
@@ -196,7 +196,7 @@ impl InterpreterVisitor {
 
         InterpreterVisitor {
             cactus,
-            global_env: curr_env,
+            // global_env: curr_env,
             curr_env,
         }
     }
@@ -234,20 +234,20 @@ impl InterpreterVisitor {
             Err(Box::new(Error::new(ErrorKind::FailedCast)))
         }
     }
-    fn try_str(value: Object) -> Result<String> {
-        if let Object::String(s) = value {
-            Ok(s)
-        } else {
-            Err(Box::new(Error::new(ErrorKind::FailedCast)))
-        }
-    }
-    fn try_bool(value: Object) -> Result<bool> {
-        if let Object::Boolean(b) = value {
-            Ok(b)
-        } else {
-            Err(Box::new(Error::new(ErrorKind::FailedCast)))
-        }
-    }
+    // fn try_str(value: Object) -> Result<String> {
+    //     if let Object::String(s) = value {
+    //         Ok(s)
+    //     } else {
+    //         Err(Box::new(Error::new(ErrorKind::FailedCast)))
+    //     }
+    // }
+    // fn try_bool(value: Object) -> Result<bool> {
+    //     if let Object::Boolean(b) = value {
+    //         Ok(b)
+    //     } else {
+    //         Err(Box::new(Error::new(ErrorKind::FailedCast)))
+    //     }
+    // }
 
     fn visit_block(&mut self, statements: &[Stmt]) -> Result<()> {
         // remember current environment

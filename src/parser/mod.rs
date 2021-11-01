@@ -20,7 +20,7 @@ impl Parser {
 
         // as long as we're not at end of file
         while !self.is_at_end() {
-            dbg!(&statements);
+            // dbg!(&statements);
             // make mo statements
             let declaration = match self.declaration() {
                 Ok(d) => d,
@@ -90,7 +90,7 @@ impl Parser {
             self.print_statement()
         // check if its a block
         } else if self.matches(&[TokenType::LeftBrace]) {
-            dbg!("its a block");
+            // dbg!("its a block");
             self.block()
         } else {
             // otherwise just treat it as an extension
@@ -150,7 +150,7 @@ impl Parser {
         // if we find an equals after the left-hand side,
         // wrap it all up in an assignment expression
         if self.matches(&[TokenType::Equal]) {
-            let equals = self.previous();
+            let _equals = self.previous();
             // right-associative recursion is ok
             let value = self.assignment()?;
 
@@ -373,7 +373,6 @@ impl Parser {
         self.advance();
 
         while !self.is_at_end() {
-
             if self.previous().token_type == TokenType::Semicolon {
                 return;
             }

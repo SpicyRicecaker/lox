@@ -13,9 +13,9 @@ impl Expr {
                 right,
             } => visitor.visit_binary(left, operator, right),
             Expr::Unary { operator, right } => visitor.visit_unary(operator, right),
-            Expr::Variable { name } => todo!(),
-            Expr::Null => panic!("shouldn't happen"),
-            Expr::Assign { name, value } => todo!(),
+            _ => {
+                panic!()
+            }
         }
     }
 }

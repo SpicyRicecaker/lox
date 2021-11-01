@@ -1,4 +1,4 @@
-use std::{collections::HashMap, slice::SliceIndex};
+use std::collections::HashMap;
 
 use crate::{interpreter::Object, token::Token};
 
@@ -74,10 +74,7 @@ impl Cactus {
         let mut arena = Arena::new();
         let cur_env = arena.push(Environment::new());
         // dbg!(&arena);
-        Cactus {
-            arena,
-            cur_env,
-        }
+        Cactus { arena, cur_env }
     }
 
     pub fn define(&mut self, name: &str, obj: Object, cur_env: usize) {

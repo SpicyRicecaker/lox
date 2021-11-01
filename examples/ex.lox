@@ -1,4 +1,8 @@
 var b = 4;
 {
     print b * 2;
+    var b = true;
+    print b;
+    b = 3;
+    print b;
 }
