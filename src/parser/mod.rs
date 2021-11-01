@@ -20,6 +20,7 @@ impl Parser {
 
         // as long as we're not at end of file
         while !self.is_at_end() {
+            dbg!(&statements);
             // make mo statements
             let declaration = match self.declaration() {
                 Ok(d) => d,
@@ -31,7 +32,7 @@ impl Parser {
             };
             statements.push(declaration);
         }
-        eprintln!("{:?}", statements);
+        // eprintln!("{:?}", statements);
 
         Ok(statements)
     }
@@ -68,7 +69,7 @@ impl Parser {
         let mut statements = Vec::new();
 
         // keep consuming tokens until we get to a right brace
-        while self.check(TokenType::RightBrace) && self.is_at_end() {
+        while !self.check(TokenType::RightBrace) && !self.is_at_end() {
             // push it onto the vec
             statements.push(self.declaration()?);
         }
@@ -89,6 +90,7 @@ impl Parser {
             self.print_statement()
         // check if its a block
         } else if self.matches(&[TokenType::LeftBrace]) {
+            dbg!("its a block");
             self.block()
         } else {
             // otherwise just treat it as an extension
@@ -371,7 +373,7 @@ impl Parser {
         self.advance();
 
         while !self.is_at_end() {
-            println!("12");
+
             if self.previous().token_type == TokenType::Semicolon {
                 return;
             }

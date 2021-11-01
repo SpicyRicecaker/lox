@@ -173,6 +173,7 @@ impl StatementVisitor for InterpreterVisitor {
             _ => self.evaluate(initializer)?,
         };
 
+        // dbg!(self.curr_env);
         self.cactus.define(&name.lexeme, obj, self.curr_env);
 
         Ok(())
@@ -188,6 +189,7 @@ pub struct InterpreterVisitor {
 impl InterpreterVisitor {
     pub fn new() -> Self {
         let cactus = Cactus::new();
+        // println!("setting curr env to {}", cactus.cur_env);
         let curr_env = cactus.cur_env;
         // let mut tree = Arena {arena: Vec::new()};
         // let idx = tree.push(Environment::new());
@@ -207,7 +209,7 @@ impl InterpreterVisitor {
         }
     }
     pub fn execute(&mut self, stmt: &Stmt) -> Result<()> {
-        println!("executing statements??");
+        // println!("[dbg] calling execute()");
         self.accept(stmt)
     }
     pub fn interpret(&mut self, stmts: Vec<Stmt>) -> Result<()> {
@@ -260,7 +262,7 @@ impl InterpreterVisitor {
         // Execute all the statements
         statements.iter().try_for_each(|s| self.accept(s))?;
 
-        println!("actually executing statmenet");
+        // println!("actually executing statmenet");
 
         // Reset environment
 

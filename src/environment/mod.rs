@@ -9,6 +9,7 @@ pub mod error;
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 /// Code following tutorial from https://dev.to/deciduously/no-more-tears-no-more-knots-arena-allocated-trees-in-rust-44k6
+#[derive(Debug)]
 pub struct Arena<T>
 where
     T: PartialEq,
@@ -62,6 +63,7 @@ where
 
 /// Define a wrapper around `Arena<T>`, since the above implementation is pretty widespread
 /// We call it `Cactus` (short for `CactusStack`), a name for `Parent-Pointer Tree`
+#[derive(Debug)]
 pub struct Cactus {
     pub arena: Arena<Environment>,
     pub cur_env: usize,
@@ -71,13 +73,15 @@ impl Cactus {
     pub fn new() -> Self {
         let mut arena = Arena::new();
         let cur_env = arena.push(Environment::new());
+        // dbg!(&arena);
         Cactus {
-            arena: Arena::new(),
+            arena,
             cur_env,
         }
     }
 
     pub fn define(&mut self, name: &str, obj: Object, cur_env: usize) {
+        // dbg!(&self);
         let node = self.arena.get_mut(cur_env).unwrap();
         node.define(name, obj);
     }
@@ -125,7 +129,7 @@ impl Default for Cactus {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Node<T> {
     idx: usize,
     pub val: T,
