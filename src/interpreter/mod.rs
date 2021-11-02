@@ -217,7 +217,7 @@ impl InterpreterVisitor {
         // deviation: no stringify method here because rust uses `impl Display` instead
         stmts.iter().try_for_each(|s| self.execute(s))
     }
-    fn evaluate(&mut self, expr: &crate::ast::Expr) -> Result<Object> {
+    pub fn evaluate(&mut self, expr: &crate::ast::Expr) -> Result<Object> {
         expr.accept(self)
     }
     fn is_truthy(ob: &Object) -> bool {

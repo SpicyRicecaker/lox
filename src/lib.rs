@@ -56,9 +56,20 @@ pub fn run_prompt() -> Result<(), Box<dyn Error>> {
                 break;
             }
             _ => {
-                if let Err(e) = run(input, &mut interpreter) {
-                    eprintln!("runtime error occured: {}", e);
-                };
+                // TODO replace `run` w/ `run_repl`, where we only parse 1 stmt, and match that statement to see if it's an expr or a declaration
+                // If it is just an expr then return it.
+                // We certaintly don't want to pass a variable into run to achieve this because then it'll affect runtime performance for actual files at a nontrivial level
+                let mut scanner = Scanner::new(input);
+                scanner.scan_tokens()?;
+                let mut parser = parser::Parser::new(scanner.tokens);
+                let statements = parser.parse()?;
+                match statements.get(0) {
+                    Some(s) => match s {
+                        ast::Stmt::Expr(e) => println!("{:#?}", interpreter.evaluate(e)?),
+                        s => interpreter.execute(s)?,
+                    },
+                    None => eprintln!("no statements "),
+                }
             }
         }
     }
