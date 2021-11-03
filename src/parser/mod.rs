@@ -86,16 +86,59 @@ impl Parser {
 
     fn statement(&mut self) -> Result<Stmt> {
         // check if it's a print statement
+        // TODO Could, should convert this into match statement
         if self.matches(&[TokenType::Print]) {
             self.print_statement()
         // check if its a block
         } else if self.matches(&[TokenType::LeftBrace]) {
             // dbg!("its a block");
             self.block()
+        } else if self.matches(&[TokenType::If]) {
+            self.if_statement()
         } else {
             // otherwise just treat it as an extension
             self.expression_statement()
         }
+    }
+
+    /// Generates expr conditional, then statement, else statement
+    fn if_statement(&mut self) -> Result<Stmt> {
+        // Consume left (
+        // TODO it's not good nor idiomatic that we have to generate an error like this
+        // Maybe helper method that gens this? Would like to see what the runtime error looks like first
+        self.consume(
+            TokenType::LeftParen,
+            Error::new(ErrorKind::UnmatchedParen(Token::new(
+                TokenType::If,
+                "if".to_string(),
+                Literal::Nil,
+                self.current,
+            ))),
+        )?;
+        let condition = self.expression()?;
+        self.consume(
+            TokenType::RightParen,
+            Error::new(ErrorKind::UnmatchedParen(Token::new(
+                TokenType::If,
+                "if".to_string(),
+                Literal::Nil,
+                self.current,
+            ))),
+        )?;
+        // Note that we use self.statement() here instead of self.block(), because unlike rust we want to
+        // support single-line conditional into statements like `if (true) run();`
+        let then_branch = self.statement()?;
+        let else_branch = if self.matches(&[TokenType::Else]) {
+            Some(Box::new(self.statement()?))
+        } else {
+            None
+        };
+
+        Ok(Stmt::If {
+            condition,
+            then_branch: Box::new(then_branch),
+            else_branch,
+        })
     }
 
     /// Generates print expr statement

@@ -46,6 +46,16 @@ pub enum Expr {
 pub enum Stmt {
     Expr(Expr),
     Print(Expr),
-    Var { name: Token, initializer: Expr },
-    Block { statements: Vec<Stmt> },
+    Var {
+        name: Token,
+        initializer: Expr,
+    },
+    Block {
+        statements: Vec<Stmt>,
+    },
+    If {
+        condition: Expr,
+        then_branch: Box<Stmt>,
+        else_branch: Option<Box<Stmt>>,
+    },
 }
