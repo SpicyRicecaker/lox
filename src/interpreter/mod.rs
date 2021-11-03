@@ -74,7 +74,7 @@ impl TreeVisitor<Object> for InterpreterVisitor {
                     },
                     // Could also use + operator to concatenate strings
                     Object::String(l) => Object::String(format!("{}{}", l, right)),
-                    _ => panic!(),
+                    _ => return Err(Box::new(Error::new(ErrorKind::FailedCast))),
                 }
             }
             Greater => Object::Boolean(Self::try_num(left)? > Self::try_num(right)?),
@@ -163,7 +163,10 @@ impl StatementVisitor for InterpreterVisitor {
 
     fn visit_print_stmt(&mut self, stmt: &Expr) -> Result<()> {
         let val = self.evaluate(stmt)?;
-        println!("{}", val);
+        match val {
+            Object::Nil => return Err(Box::new(Error::new(ErrorKind::UnitializedVariable))),
+            v => println!("{}", v)
+        }
         Ok(())
     }
 

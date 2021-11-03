@@ -1,5 +1,7 @@
 use std::{error, fmt};
 
+use crate::token::Token;
+
 #[derive(Debug)]
 pub struct Error {
     pub kind: ErrorKind,
@@ -20,6 +22,7 @@ impl fmt::Display for Error {
                 write!(f, "failed cast lol")
             }
             ErrorKind::DivideByZero(n) => write!(f, "attempt to divide {} by 0", n),
+            ErrorKind::UnitializedVariable => write!(f, "unitialized variable (too lazy to write name lol")
         }
     }
 }
@@ -28,4 +31,5 @@ impl fmt::Display for Error {
 pub enum ErrorKind {
     FailedCast,
     DivideByZero(f32),
+    UnitializedVariable
 }
