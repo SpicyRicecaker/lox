@@ -1,7 +1,5 @@
 use std::{error, fmt};
 
-use crate::token::Token;
-
 #[derive(Debug)]
 pub struct Error {
     pub kind: ErrorKind,

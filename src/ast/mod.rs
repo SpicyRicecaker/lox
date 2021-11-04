@@ -23,6 +23,11 @@ pub enum Expr {
         name: Token,
         value: Box<Expr>,
     },
+    Logical {
+        left: Box<Expr>,
+        operator: Token,
+        right: Box<Expr>,
+    },
     // e.g. "2323", 123
     Binary {
         left: Box<Expr>,

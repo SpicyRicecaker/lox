@@ -114,6 +114,30 @@ impl TreeVisitor<Object> for InterpreterVisitor {
         self.cactus.assign(name, value.clone(), self.curr_env)?;
         Ok(value)
     }
+
+    ///
+    fn visit_logical_expr(
+        &mut self,
+        left: &Expr,
+        operator: &Token,
+        right: &Expr,
+    ) -> Result<Object> {
+        let left = self.evaluate(left)?;
+
+        // We wan't to short-circuit if the left expression satisfies the condition
+        // This means that if left is true in an or statemnt, then the entire expression is true and we can just return left
+        // But if left is false in an and statement, then the entire expression is false and we can just return left
+        // TODO I'm sure there's some way to shorten
+        if operator.token_type == TokenType::Or {
+            if Self::is_truthy(&left) {
+                return Ok(left);
+            }
+        } else if !Self::is_truthy(&left) {
+            return Ok(left);
+        }
+        // Otherwise, our only choice is to evaluate right
+        self.evaluate(right)
+    }
 }
 
 impl Expr {
@@ -134,6 +158,11 @@ impl Expr {
             Expr::Variable { name } => visitor.visit_variable(name),
             Expr::Null => panic!("shouldn't be null expr"),
             Expr::Assign { name, value } => visitor.visit_assign_expr(name, value),
+            Expr::Logical {
+                left,
+                operator,
+                right,
+            } => visitor.visit_logical_expr(left, operator, right),
         }
     }
 }
@@ -145,6 +174,7 @@ pub trait TreeVisitor<T> {
     fn visit_literal(&self, expr: &Literal) -> Result<T>;
     fn visit_variable(&self, name: &Token) -> Result<T>;
     fn visit_assign_expr(&mut self, name: &Token, value: &Expr) -> Result<T>;
+    fn visit_logical_expr(&mut self, left: &Expr, operator: &Token, right: &Expr) -> Result<T>;
 }
 
 /// Statement is a debuggin print thing
@@ -152,6 +182,12 @@ pub trait StatementVisitor {
     fn visit_expression_stmt(&mut self, stmt: &Expr) -> Result<()>;
     fn visit_print_stmt(&mut self, stmt: &Expr) -> Result<()>;
     fn visit_var_stmt(&mut self, name: &Token, initializer: &Expr) -> Result<()>;
+    fn visit_if_stmt(
+        &mut self,
+        condition: &Expr,
+        then_branch: &Stmt,
+        else_branch: Option<&Stmt>,
+    ) -> Result<()>;
 }
 
 impl StatementVisitor for InterpreterVisitor {
@@ -165,7 +201,7 @@ impl StatementVisitor for InterpreterVisitor {
         let val = self.evaluate(stmt)?;
         match val {
             Object::Nil => return Err(Box::new(Error::new(ErrorKind::UnitializedVariable))),
-            v => println!("{}", v)
+            v => println!("{}", v),
         }
         Ok(())
     }
@@ -178,6 +214,27 @@ impl StatementVisitor for InterpreterVisitor {
 
         // dbg!(self.curr_env);
         self.cactus.define(&name.lexeme, obj, self.curr_env);
+
+        Ok(())
+    }
+
+    /// Given a `condition` and `left branch` and `right branch`, if the `condition` evaluates to `true`,
+    /// execute() `left branch`, otherwise execute `right branch`
+    fn visit_if_stmt(
+        &mut self,
+        condition: &Expr,
+        then_branch: &Stmt,
+        else_branch: Option<&Stmt>,
+    ) -> Result<()> {
+        // In an if statement, only run the code in the block if the condition is actually true
+        if Self::is_truthy(&self.evaluate(condition)?) {
+            // Run the if branch
+            self.execute(then_branch)?;
+        // Otherwise, if the expression is not truthy and we actually have an else branch
+        } else if let Some(stmt) = else_branch {
+            // Then execute it, passing the reference into
+            self.execute(stmt)?;
+        }
 
         Ok(())
     }
@@ -209,6 +266,11 @@ impl InterpreterVisitor {
             Stmt::Print(e) => self.visit_print_stmt(e),
             Stmt::Var { name, initializer } => self.visit_var_stmt(name, initializer),
             Stmt::Block { statements } => self.visit_block(statements),
+            Stmt::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => self.visit_if_stmt(condition, then_branch, else_branch.as_deref()),
         }
     }
     pub fn execute(&mut self, stmt: &Stmt) -> Result<()> {

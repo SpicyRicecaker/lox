@@ -102,6 +102,8 @@ impl Parser {
     }
 
     /// Generates expr conditional, then statement, else statement
+    /// Basically splits up an if statement in to if + `condition` + `left branch` + `right branch`
+    /// `right branch` is only there if there is an `if  else` statement
     fn if_statement(&mut self) -> Result<Stmt> {
         // Consume left (
         // TODO it's not good nor idiomatic that we have to generate an error like this
@@ -187,8 +189,8 @@ impl Parser {
     }
 
     fn assignment(&mut self) -> Result<Expr> {
-        // parse the left-hand side
-        let expr = self.equality()?;
+        // Offset the call to the or statement, which will eventually come back to equality
+        let expr = self.or()?;
 
         // if we find an equals after the left-hand side,
         // wrap it all up in an assignment expression
@@ -209,6 +211,39 @@ impl Parser {
             // otherwise just return the expr
             Ok(expr)
         }
+    }
+
+    fn or(&mut self) -> Result<Expr> {
+        // Match the lower precedence level, or has lower precendence than and (and is evaluated first)
+        let mut expr = self.and()?;
+
+        while self.matches(&[TokenType::Or]) {
+            let operator = self.previous().clone();
+            let right = self.and()?;
+            expr = Expr::Logical {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            };
+        }
+
+        Ok(expr)
+    }
+
+    fn and(&mut self) -> Result<Expr> {
+        let mut expr = self.equality()?;
+
+        while self.matches(&[TokenType::And]) {
+            let operator = self.previous().clone();
+            let right = self.equality()?;
+            expr = Expr::Logical {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            };
+        }
+
+        Ok(expr)
     }
 
     /// `==` and `!=`, we can multiple of these in a sentence so
