@@ -12,6 +12,7 @@ pub mod printer;
 use crate::token::Token;
 
 #[derive(Debug, Clone, PartialEq)]
+/// Anything that evaluates to a value
 pub enum Expr {
     // e.g. expression operator expression
     Literal(Literal),
@@ -48,6 +49,7 @@ pub enum Expr {
 }
 
 #[derive(Debug)]
+/// A statement can be an expression, `print` followed by something, `var` followed by something, a `{}`, an `if {} else {}`, and more
 pub enum Stmt {
     Expr(Expr),
     Print(Expr),
@@ -63,4 +65,9 @@ pub enum Stmt {
         then_branch: Box<Stmt>,
         else_branch: Option<Box<Stmt>>,
     },
+    // Separate class for expressions and statements makes declaring this very nice (but I would argue the same for if condition)
+    While { 
+        condition: Expr,
+        body: Box<Stmt>
+    }
 }

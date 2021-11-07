@@ -95,10 +95,48 @@ impl Parser {
             self.block()
         } else if self.matches(&[TokenType::If]) {
             self.if_statement()
+        } else if self.matches(&[TokenType::While]) {
+            self.while_statement()
         } else {
             // otherwise just treat it as an extension
             self.expression_statement()
         }
+    }
+
+    /// Generates [Stmt::While] with a condition and a body
+    fn while_statement(&mut self) -> Result<Stmt> {
+        // Again, duplicate code that I'm too lazy to get rid of rn lol
+        // See if_statement
+        // First consume `(`
+        self.consume(
+            TokenType::LeftParen,
+            Error::new(ErrorKind::UnmatchedParen(Token::new(
+                TokenType::While,
+                "while".to_string(),
+                Literal::Nil,
+                self.current,
+            ))),
+        )?;
+        // Then consume the statemtent inside `(..)`
+        let condition = self.expression()?;
+        self.consume(
+            TokenType::RightParen,
+            Error::new(ErrorKind::UnmatchedParen(Token::new(
+                TokenType::While,
+                "while".to_string(),
+                Literal::Nil,
+                self.current,
+            ))),
+        )?;
+        // Finaly, consume the right `)`
+        let body = Box::new(self.statement()?);
+
+        Ok(
+            Stmt::While {
+                condition,
+                body,
+            }
+        )
     }
 
     /// Generates expr conditional, then statement, else statement

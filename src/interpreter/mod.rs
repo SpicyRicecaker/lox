@@ -45,7 +45,7 @@ impl From<&Literal> for Object {
     }
 }
 
-impl TreeVisitor<Object> for InterpreterVisitor {
+impl ExprVisitor<Object> for InterpreterVisitor {
     fn visit_binary(&mut self, left: &Expr, operator: &Token, right: &Expr) -> Result<Object> {
         let left = self.evaluate(left)?;
         let right = self.evaluate(right)?;
@@ -144,7 +144,7 @@ impl Expr {
     /// Duplicate method but I can't figure out how to separate into String and Objects atm
     pub fn accept<T>(&self, visitor: &mut T) -> Result<Object>
     where
-        T: TreeVisitor<Object>,
+        T: ExprVisitor<Object>,
     {
         match self {
             Expr::Literal(e) => visitor.visit_literal(e),
@@ -167,7 +167,8 @@ impl Expr {
     }
 }
 
-pub trait TreeVisitor<T> {
+/// Evaluates an [Expr] into [Object]
+pub trait ExprVisitor<T> {
     fn visit_binary(&mut self, left: &Expr, operator: &Token, right: &Expr) -> Result<T>;
     fn visit_unary(&mut self, operator: &Token, right: &Expr) -> Result<T>;
     fn visit_grouping(&mut self, expr: &Expr) -> Result<T>;
@@ -177,7 +178,8 @@ pub trait TreeVisitor<T> {
     fn visit_logical_expr(&mut self, left: &Expr, operator: &Token, right: &Expr) -> Result<T>;
 }
 
-/// Statement is a debuggin print thing
+/// Statement visitor, which evaluates things like `if {..}` and `while {}` that don't necessarily evaluate into an [Object]. 
+/// Basically a [Stmt] is a function that can return void, or also return some other value
 pub trait StatementVisitor {
     fn visit_expression_stmt(&mut self, stmt: &Expr) -> Result<()>;
     fn visit_print_stmt(&mut self, stmt: &Expr) -> Result<()>;
@@ -188,6 +190,7 @@ pub trait StatementVisitor {
         then_branch: &Stmt,
         else_branch: Option<&Stmt>,
     ) -> Result<()>;
+    fn visit_while_stmt(&mut self, condition: &Expr, body: &Stmt) -> Result<()>;
 }
 
 impl StatementVisitor for InterpreterVisitor {
@@ -238,6 +241,16 @@ impl StatementVisitor for InterpreterVisitor {
 
         Ok(())
     }
+
+    /// Executes a [Stmt::While]
+    fn visit_while_stmt(&mut self, condition: &Expr, body: &Stmt) -> Result<()> {
+        // Keep in mind that we shouldn't put the `evaluate` function outside of the loop, because otherwise it would always be true or false
+        while Self::is_truthy(&self.evaluate(condition)?) {
+            self.execute(body)?;
+        }
+
+        Ok(())
+    }
 }
 
 pub struct InterpreterVisitor {
@@ -271,6 +284,7 @@ impl InterpreterVisitor {
                 then_branch,
                 else_branch,
             } => self.visit_if_stmt(condition, then_branch, else_branch.as_deref()),
+            Stmt::While { condition, body } => self.visit_while_stmt(condition, body),
         }
     }
     pub fn execute(&mut self, stmt: &Stmt) -> Result<()> {
