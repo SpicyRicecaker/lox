@@ -86,7 +86,7 @@ impl Parser {
 
     fn statement(&mut self) -> Result<Stmt> {
         // check if it's a print statement
-        // TODO Could, should convert this into match statement
+        // TODO Could, should convert this into match statement, it's looking a lot like a certain Yandere Developer's code right now
         if self.matches(&[TokenType::Print]) {
             self.print_statement()
         // check if its a block
@@ -97,10 +97,18 @@ impl Parser {
             self.if_statement()
         } else if self.matches(&[TokenType::While]) {
             self.while_statement()
+        } else if self.matches(&[TokenType::For]) {
+            self.for_statement()
         } else {
             // otherwise just treat it as an extension
             self.expression_statement()
         }
+    }
+
+    /// Desugars a `for` loop to [Stmt::While]
+    fn for_statement(&mut self) -> Result<Stmt> {
+        // self.consum
+        todo!()
     }
 
     /// Generates [Stmt::While] with a condition and a body
@@ -131,12 +139,7 @@ impl Parser {
         // Finaly, consume the right `)`
         let body = Box::new(self.statement()?);
 
-        Ok(
-            Stmt::While {
-                condition,
-                body,
-            }
-        )
+        Ok(Stmt::While { condition, body })
     }
 
     /// Generates expr conditional, then statement, else statement
