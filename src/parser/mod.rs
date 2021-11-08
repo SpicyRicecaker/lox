@@ -107,7 +107,78 @@ impl Parser {
 
     /// Desugars a `for` loop to [Stmt::While]
     fn for_statement(&mut self) -> Result<Stmt> {
-        // self.consum
+        // Take the for `(` beginning parenthesis
+        self.consume(
+            TokenType::LeftParen,
+            Error::new(ErrorKind::UnmatchedParen(Token::new(
+                TokenType::For,
+                "for".to_string(),
+                Literal::Nil,
+                self.current,
+            ))),
+        )?;
+
+        // Any part of the space in between semicolons can be omitted
+        // for(; sdf; sdf)
+        // for(sdf; ; sdf)
+        // for(; ; sdf)
+        // Are all valid
+
+        // If there is no beginning initializer, i.e. `for(; i < 2; i++)`
+        let initializer = if self.matches(&[TokenType::Semicolon]) {
+            None
+        }
+        // If there is a beginning initializer, i.e. `for(var i = 0; i < 2; i++)`
+        else if self.matches(&[TokenType::Var]) {
+            // we declare a new variable
+            Some(self.var_declaration()?)
+        }
+        // Believe it or not, for loops actually can do `for(i=0; ...)`
+        else {
+            Some(self.expression_statement()?)
+        };
+
+        // If there's no condition
+        let condition = if self.check(TokenType::Semicolon) {
+            None
+        } else {
+            Some(self.expression()?)
+        };
+        // We have to check instead of consume here because if user does not have any semicolons then we should error rather than interpret that as an optional omission
+        self.consume(TokenType::Semicolon, Error::new(ErrorKind::ExpectSemicolon))?;
+
+        // for (asdf; asdf; )
+        let increment = if !self.check(TokenType::RightParen) {
+            Some(self.expression()?)
+        } else {
+            None
+        };
+        self.consume(
+            TokenType::RightParen,
+            Error::new(ErrorKind::UnmatchedParen(Token::new(
+                TokenType::For,
+                "for".to_string(),
+                Literal::Nil,
+                self.current,
+            ))),
+        )?;
+
+        // body refers to the `{ }` after the `for` statement
+        let body = self.statement()?;
+
+        // Now we start to build a ast syntax tree that includes all these elements
+
+        // increment would be
+        /*
+        {
+            user code here...
+            b += 1;
+        }
+        */
+        let body = increment.map(|increment| Stmt::Block { statements: vec![
+
+        ] });
+
         todo!()
     }
 
