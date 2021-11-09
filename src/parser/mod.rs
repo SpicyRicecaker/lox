@@ -175,11 +175,38 @@ impl Parser {
             b += 1;
         }
         */
-        let body = increment.map(|increment| Stmt::Block { statements: vec![
+        // If there is an increment add it to the body, otherwise leave body as as
+        // map is pretty useful for manipulating options
+        let body = if let Some(increment) = increment {
+            Stmt::Block {
+                statements: vec![body, Stmt::Expr(increment)],
+            }
+        } else {
+            body
+        };
 
-        ] });
+        // If there is no condition, treat it as a `while (true) {}` loop
+        let condition = if let Some(condition) = condition {
+            condition
+        } else {
+            Expr::Literal(Literal::Boolean(false))
+        };
 
-        todo!()
+        // If there is an initializer, we run it once before the whole loop
+        // TODO this syntax looks a lot like the builder syntax
+        // It's not wrong but it doesn't feel terribly right either
+        let body = if let Some(initializer) = initializer {
+            Stmt::Block {
+                statements: vec![initializer, body],
+            }
+        } else {
+            body
+        };
+
+        Ok(Stmt::While {
+            condition,
+            body: Box::new(body),
+        })
     }
 
     /// Generates [Stmt::While] with a condition and a body
