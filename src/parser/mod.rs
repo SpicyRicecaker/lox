@@ -107,6 +107,7 @@ impl Parser {
 
     /// Desugars a `for` loop to [Stmt::While]
     fn for_statement(&mut self) -> Result<Stmt> {
+        print!("12");
         // Take the for `(` beginning parenthesis
         self.consume(
             TokenType::LeftParen,
@@ -201,7 +202,9 @@ impl Parser {
             }
         } else {
             body
-        };
+        }; 
+
+        dbg!(&body);
 
         Ok(Stmt::While {
             condition,
@@ -292,6 +295,7 @@ impl Parser {
     /// Generates stock expr statement
     fn expression_statement(&mut self) -> Result<Stmt> {
         let expr = self.expression()?;
+        println!("12");
         self.consume(TokenType::Semicolon, Error::new(ErrorKind::ExpectSemicolon))?;
         Ok(Stmt::Expr(expr))
     }
