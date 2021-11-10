@@ -4,8 +4,8 @@ use crate::{
     ast::{Expr, Stmt},
     token::{Literal, Token, TokenType},
 };
-use error::{Error, ErrorKind};
 
+use self::error::{ErrorKind, ParseError};
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 pub struct Parser {
@@ -47,10 +47,7 @@ impl Parser {
 
     fn var_declaration(&mut self) -> Result<Stmt> {
         let name = self
-            .consume(
-                TokenType::Identifier,
-                Error::new(ErrorKind::ExpectVariableName),
-            )?
+            .consume(TokenType::Identifier, "var declaration beginning")?
             .clone();
 
         let mut initializer = Expr::Null;
@@ -59,7 +56,7 @@ impl Parser {
             initializer = self.expression()?;
         }
 
-        self.consume(TokenType::Semicolon, Error::new(ErrorKind::ExpectSemicolon))?;
+        self.consume(TokenType::Semicolon, "var declaration ending")?;
 
         Ok(Stmt::Var { name, initializer })
     }
@@ -75,10 +72,7 @@ impl Parser {
         }
 
         // Then consume the right bracket
-        self.consume(
-            TokenType::RightBrace,
-            Error::new(ErrorKind::UnmatchedBrace(self.peek().clone())),
-        )?;
+        self.consume(TokenType::RightBrace, "block")?;
 
         // Return our statements
         Ok(Stmt::Block { statements })
@@ -107,17 +101,8 @@ impl Parser {
 
     /// Desugars a `for` loop to [Stmt::While]
     fn for_statement(&mut self) -> Result<Stmt> {
-        print!("12");
         // Take the for `(` beginning parenthesis
-        self.consume(
-            TokenType::LeftParen,
-            Error::new(ErrorKind::UnmatchedParen(Token::new(
-                TokenType::For,
-                "for".to_string(),
-                Literal::Nil,
-                self.current,
-            ))),
-        )?;
+        self.consume(TokenType::LeftParen, "beginning of for statement")?;
 
         // Any part of the space in between semicolons can be omitted
         // for(; sdf; sdf)
@@ -146,7 +131,7 @@ impl Parser {
             Some(self.expression()?)
         };
         // We have to check instead of consume here because if user does not have any semicolons then we should error rather than interpret that as an optional omission
-        self.consume(TokenType::Semicolon, Error::new(ErrorKind::ExpectSemicolon))?;
+        self.consume(TokenType::Semicolon, "first for statement semicolon")?;
 
         // for (asdf; asdf; )
         let increment = if !self.check(TokenType::RightParen) {
@@ -154,15 +139,7 @@ impl Parser {
         } else {
             None
         };
-        self.consume(
-            TokenType::RightParen,
-            Error::new(ErrorKind::UnmatchedParen(Token::new(
-                TokenType::For,
-                "for".to_string(),
-                Literal::Nil,
-                self.current,
-            ))),
-        )?;
+        self.consume(TokenType::RightParen, "second for statement semicolon")?;
 
         // body refers to the `{ }` after the `for` statement
         let body = self.statement()?;
@@ -202,7 +179,7 @@ impl Parser {
             }
         } else {
             body
-        }; 
+        };
 
         dbg!(&body);
 
@@ -217,26 +194,10 @@ impl Parser {
         // Again, duplicate code that I'm too lazy to get rid of rn lol
         // See if_statement
         // First consume `(`
-        self.consume(
-            TokenType::LeftParen,
-            Error::new(ErrorKind::UnmatchedParen(Token::new(
-                TokenType::While,
-                "while".to_string(),
-                Literal::Nil,
-                self.current,
-            ))),
-        )?;
+        self.consume(TokenType::LeftParen, "beginning of while statement")?;
         // Then consume the statemtent inside `(..)`
         let condition = self.expression()?;
-        self.consume(
-            TokenType::RightParen,
-            Error::new(ErrorKind::UnmatchedParen(Token::new(
-                TokenType::While,
-                "while".to_string(),
-                Literal::Nil,
-                self.current,
-            ))),
-        )?;
+        self.consume(TokenType::RightParen, "end of while statement")?;
         // Finaly, consume the right `)`
         let body = Box::new(self.statement()?);
 
@@ -250,25 +211,9 @@ impl Parser {
         // Consume left (
         // TODO it's not good nor idiomatic that we have to generate an error like this
         // Maybe helper method that gens this? Would like to see what the runtime error looks like first
-        self.consume(
-            TokenType::LeftParen,
-            Error::new(ErrorKind::UnmatchedParen(Token::new(
-                TokenType::If,
-                "if".to_string(),
-                Literal::Nil,
-                self.current,
-            ))),
-        )?;
+        self.consume(TokenType::LeftParen, "beginning of if statement")?;
         let condition = self.expression()?;
-        self.consume(
-            TokenType::RightParen,
-            Error::new(ErrorKind::UnmatchedParen(Token::new(
-                TokenType::If,
-                "if".to_string(),
-                Literal::Nil,
-                self.current,
-            ))),
-        )?;
+        self.consume(TokenType::RightParen, "end of if statement")?;
         // Note that we use self.statement() here instead of self.block(), because unlike rust we want to
         // support single-line conditional into statements like `if (true) run();`
         let then_branch = self.statement()?;
@@ -288,15 +233,14 @@ impl Parser {
     /// Generates print expr statement
     fn print_statement(&mut self) -> Result<Stmt> {
         let value = self.expression()?;
-        self.consume(TokenType::Semicolon, Error::new(ErrorKind::ExpectSemicolon))?;
+        self.consume(TokenType::Semicolon, "after print statement")?;
         Ok(Stmt::Print(value))
     }
 
     /// Generates stock expr statement
     fn expression_statement(&mut self) -> Result<Stmt> {
         let expr = self.expression()?;
-        println!("12");
-        self.consume(TokenType::Semicolon, Error::new(ErrorKind::ExpectSemicolon))?;
+        self.consume(TokenType::Semicolon, "after expr statement")?;
         Ok(Stmt::Expr(expr))
     }
 
@@ -348,7 +292,9 @@ impl Parser {
                     value: Box::new(value),
                 })
             } else {
-                Err(Box::new(Error::new(ErrorKind::InvalidAssign)))
+                Err(Box::new(crate::environment::error::EnvironmentError::new(
+                    crate::environment::error::ErrorKind::UndefinedVariable(self.peek_clone(), "during assignment"),
+                )))
             }
         } else {
             // otherwise just return the expr
@@ -479,7 +425,7 @@ impl Parser {
                     let expr = self.expression()?;
                     self.consume(
                         TokenType::RightParen,
-                        Error::new(ErrorKind::UnmatchedParen(self.peek().clone())),
+                        ParseError::new(ErrorKind::UnmatchedParen(self.peek().clone())),
                     )?;
                     Expr::Grouping {
                         expression: Box::new(expr),
@@ -489,7 +435,7 @@ impl Parser {
                 TokenType::Star | TokenType::Slash => {
                     let prev = self.previous().clone();
                     self.factor()?;
-                    return Err(Box::new(self::error::Error::new(
+                    return Err(Box::new(self::error::ParseError::new(
                         self::error::ErrorKind::ExpectLeftOperand(prev),
                     )));
                 }
@@ -499,33 +445,33 @@ impl Parser {
                 | TokenType::GreaterEqual => {
                     let prev = self.previous().clone();
                     self.comparison()?;
-                    return Err(Box::new(self::error::Error::new(
+                    return Err(Box::new(self::error::ParseError::new(
                         self::error::ErrorKind::ExpectLeftOperand(prev),
                     )));
                 }
                 TokenType::BangEqual | TokenType::EqualEqual => {
                     let prev = self.previous().clone();
                     self.equality()?;
-                    return Err(Box::new(self::error::Error::new(
+                    return Err(Box::new(self::error::ParseError::new(
                         self::error::ErrorKind::ExpectLeftOperand(prev),
                     )));
                 }
                 TokenType::Plus => {
                     let prev = self.previous().clone();
                     self.term()?;
-                    return Err(Box::new(self::error::Error::new(
+                    return Err(Box::new(self::error::ParseError::new(
                         self::error::ErrorKind::ExpectLeftOperand(prev),
                     )));
                 }
                 _ => {
-                    return Err(Box::new(self::error::Error::new(
+                    return Err(Box::new(self::error::ParseError::new(
                         self::error::ErrorKind::ExpectExpression(self.peek().clone()),
                     )));
                 }
             };
             Ok(expr)
         } else {
-            Err(Box::new(self::error::Error::new(
+            Err(Box::new(self::error::ParseError::new(
                 self::error::ErrorKind::ExpectExpression(self.peek().clone()),
             )))
         }
@@ -550,8 +496,14 @@ impl Parser {
         self.previous()
     }
 
+    /// Return reference to token at current position
     fn peek(&self) -> &Token {
         &self.tokens[self.current]
+    }
+
+    /// Return token at current position, cloned
+    fn peek_clone(&self) -> Token {
+        self.tokens[self.current].clone()
     }
 
     /// ret. true if current token is of given type
@@ -574,13 +526,17 @@ impl Parser {
     }
 
     /// checks if current cursor is over a certain token type, consumes it if so otherwise errors
-    fn consume(&mut self, token_type: TokenType, error: Error) -> Result<&Token> {
+    fn consume(&mut self, token_type: TokenType, string: &str) -> Result<&Token> {
         // if current is on token type
         if self.check(token_type) {
             // iterate over it
             Ok(self.advance())
         } else {
-            Err(Box::new(error))
+            Err(Box::new(ParseError::new(ErrorKind::Error(
+                Token::new(token_type, "any".into(), Literal::Nil, 0),
+                self.peek_clone(),
+                string.into(),
+            ))))
         }
     }
     fn previous(&self) -> &Token {

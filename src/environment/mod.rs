@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{interpreter::Object, token::Token};
 
-use self::error::{ErrorKind, RuntimeError};
+use self::error::{ErrorKind, EnvironmentError};
 
 pub mod error;
 
@@ -97,8 +97,9 @@ impl Cactus {
             // unwrap here, because we assume that arena does hold the parent
             self.get(name, p)
         } else {
-            Err(Box::new(RuntimeError::new(ErrorKind::UndefinedVariable(
+            Err(Box::new(EnvironmentError::new(ErrorKind::UndefinedVariable(
                 name.clone(),
+                "retrieving variable in get()"
             ))))
         }
     }
@@ -113,7 +114,7 @@ impl Cactus {
             // unwrap, because we assume arena holds the parent
             self.assign(name, obj, p)
         } else {
-            Err(Box::new(RuntimeError::new(ErrorKind::UndefinedVariable(
+            Err(Box::new(EnvironmentError::new(ErrorKind::UndefinedVariable(
                 name.clone(),
             ))))
         }

@@ -7,7 +7,7 @@ use crate::{
     token::{Literal, Token, TokenType},
 };
 
-use self::error::{Error, ErrorKind};
+use self::error::{ErrorKind, InterpreterError};
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 /// It might seem like objects are equivalent to literals
@@ -58,7 +58,9 @@ impl ExprVisitor<Object> for InterpreterVisitor {
                 let right = Self::try_num(right)?;
                 let left = Self::try_num(left)?;
                 if right == 0.0 {
-                    return Err(Box::new(Error::new(ErrorKind::DivideByZero(left))));
+                    return Err(Box::new(InterpreterError::new(ErrorKind::DivideByZero(
+                        left,
+                    ))));
                 } else {
                     Object::Number(left / right)
                 }
@@ -74,7 +76,12 @@ impl ExprVisitor<Object> for InterpreterVisitor {
                     },
                     // Could also use + operator to concatenate strings
                     Object::String(l) => Object::String(format!("{}{}", l, right)),
-                    _ => return Err(Box::new(Error::new(ErrorKind::FailedCast))),
+                    _ => {
+                        return Err(Box::new(InterpreterError::new(ErrorKind::FailedCast(
+                            right.clone(),
+                            Object::String("".into()),
+                        ))))
+                    }
                 }
             }
             Greater => Object::Boolean(Self::try_num(left)? > Self::try_num(right)?),
@@ -178,7 +185,7 @@ pub trait ExprVisitor<T> {
     fn visit_logical_expr(&mut self, left: &Expr, operator: &Token, right: &Expr) -> Result<T>;
 }
 
-/// Statement visitor, which evaluates things like `if {..}` and `while {}` that don't necessarily evaluate into an [Object]. 
+/// Statement visitor, which evaluates things like `if {..}` and `while {}` that don't necessarily evaluate into an [Object].
 /// Basically a [Stmt] is a function that can return void, or also return some other value
 pub trait StatementVisitor {
     fn visit_expression_stmt(&mut self, stmt: &Expr) -> Result<()>;
@@ -203,7 +210,11 @@ impl StatementVisitor for InterpreterVisitor {
     fn visit_print_stmt(&mut self, stmt: &Expr) -> Result<()> {
         let val = self.evaluate(stmt)?;
         match val {
-            Object::Nil => return Err(Box::new(Error::new(ErrorKind::UnitializedVariable))),
+            Object::Nil => {
+                return Err(Box::new(InterpreterError::new(
+                    ErrorKind::UnitializedVariable,
+                )))
+            }
             v => println!("{}", v),
         }
         Ok(())
@@ -310,7 +321,10 @@ impl InterpreterVisitor {
         if let Object::Number(n) = value {
             Ok(n)
         } else {
-            Err(Box::new(Error::new(ErrorKind::FailedCast)))
+            Err(Box::new(InterpreterError::new(ErrorKind::FailedCast(
+                value,
+                Object::Number(0.0),
+            ))))
         }
     }
     // fn try_str(value: Object) -> Result<String> {

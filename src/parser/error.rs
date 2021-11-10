@@ -3,52 +3,29 @@ use crate::token::Token;
 use std::{error, fmt};
 
 #[derive(Debug)]
-pub struct Error {
+pub struct ParseError {
     pub kind: ErrorKind,
 }
 
-impl error::Error for Error {}
+impl error::Error for ParseError {}
 
-impl Error {
-    pub fn new(kind: ErrorKind) -> Error {
-        Error { kind }
+impl ParseError {
+    pub fn new(kind: ErrorKind) -> ParseError {
+        ParseError { kind }
     }
 }
 
-impl fmt::Display for Error {
+impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.kind {
-            ErrorKind::UnmatchedParen(_) => write!(f, "expected ')' after expression"),
-            ErrorKind::UnmatchedBrace(_) => write!(f, "expected '}}' after {{"),
-            ErrorKind::ExpectExpression(t) => {
-                write!(
-                    f,
-                    "unexpected expression `{:?} {}` at line {}",
-                    t.token_type, t.literal, t.line
-                )
+            ErrorKind::Error(exp, fnd, str) => {
+                write!(f, "expected {:?}, found {:?}, during {}", exp, fnd, str)
             }
-
-            ErrorKind::ExpectLeftOperand(t) => {
-                write!(
-                    f,
-                    "missing left operand for `{:?} {}`",
-                    t.token_type, t.lexeme
-                )
-            }
-            ErrorKind::ExpectSemicolon => write!(f, "missing semicolon"),
-            ErrorKind::ExpectVariableName => write!(f, "expect variable name"),
-            ErrorKind::InvalidAssign => write!(f, "invalid assignment target"),
         }
     }
 }
 
 #[derive(Debug)]
 pub enum ErrorKind {
-    UnmatchedParen(Token),
-    UnmatchedBrace(Token),
-    ExpectExpression(Token),
-    ExpectLeftOperand(Token),
-    ExpectVariableName,
-    ExpectSemicolon,
-    InvalidAssign,
+    Error(Token, Token, String),
 }
