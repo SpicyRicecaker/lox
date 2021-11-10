@@ -2,10 +2,12 @@ pub mod error;
 
 use crate::{
     ast::{Expr, Stmt},
+    environment::error::env_error,
     token::{Literal, Token, TokenType},
 };
 
-use self::error::{ErrorKind, ParseError};
+use self::error::{ParseError, ParseErrorKind};
+
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 pub struct Parser {
@@ -292,9 +294,7 @@ impl Parser {
                     value: Box::new(value),
                 })
             } else {
-                Err(Box::new(crate::environment::error::EnvironmentError::new(
-                    crate::environment::error::ErrorKind::UndefinedVariable(self.peek_clone(), "during assignment"),
-                )))
+                Err(Box::new(env_error(self.peek(), "during assignment")))
             }
         } else {
             // otherwise just return the expr
@@ -379,6 +379,8 @@ impl Parser {
             Ok(self.primary()?)
         }
     }
+
+    /// The lowest precedence part of the context-free grammar, matches various primitive types like `false`, `(` + `expr` + `)`, etc. 
     fn primary(&mut self) -> Result<Expr> {
         // TODO How do we get rid of this duplication zzz.
         if self.matches(&[
@@ -425,18 +427,19 @@ impl Parser {
                     let expr = self.expression()?;
                     self.consume(
                         TokenType::RightParen,
-                        ParseError::new(ErrorKind::UnmatchedParen(self.peek().clone())),
+                        "during primary (), while matching parentheses",
                     )?;
                     Expr::Grouping {
                         expression: Box::new(expr),
                     }
                 }
+                // The tokens below shouldn't be in primary, so it's mostly error collection
                 // Call factor to evaluate the rest of the statement as a factor, not as terms
                 TokenType::Star | TokenType::Slash => {
                     let prev = self.previous().clone();
                     self.factor()?;
-                    return Err(Box::new(self::error::ParseError::new(
-                        self::error::ErrorKind::ExpectLeftOperand(prev),
+                    return Err(Box::new(ParseError::new(
+                        ParseErrorKind::ExpectLeftOperand(prev),
                     )));
                 }
                 TokenType::Less
@@ -445,34 +448,34 @@ impl Parser {
                 | TokenType::GreaterEqual => {
                     let prev = self.previous().clone();
                     self.comparison()?;
-                    return Err(Box::new(self::error::ParseError::new(
-                        self::error::ErrorKind::ExpectLeftOperand(prev),
+                    return Err(Box::new(ParseError::new(
+                        ParseErrorKind::ExpectLeftOperand(prev),
                     )));
                 }
                 TokenType::BangEqual | TokenType::EqualEqual => {
                     let prev = self.previous().clone();
                     self.equality()?;
-                    return Err(Box::new(self::error::ParseError::new(
-                        self::error::ErrorKind::ExpectLeftOperand(prev),
+                    return Err(Box::new(ParseError::new(
+                        ParseErrorKind::ExpectLeftOperand(prev),
                     )));
                 }
                 TokenType::Plus => {
                     let prev = self.previous().clone();
                     self.term()?;
-                    return Err(Box::new(self::error::ParseError::new(
-                        self::error::ErrorKind::ExpectLeftOperand(prev),
+                    return Err(Box::new(ParseError::new(
+                        ParseErrorKind::ExpectLeftOperand(prev),
                     )));
                 }
                 _ => {
-                    return Err(Box::new(self::error::ParseError::new(
-                        self::error::ErrorKind::ExpectExpression(self.peek().clone()),
+                    return Err(Box::new(ParseError::new(
+                        ParseErrorKind::Error(self.peek().clone(), self.peek().clone(), "invalid sequence, shouldn't ever occur".into()),
                     )));
                 }
             };
             Ok(expr)
         } else {
-            Err(Box::new(self::error::ParseError::new(
-                self::error::ErrorKind::ExpectExpression(self.peek().clone()),
+            Err(Box::new(ParseError::new(
+                ParseErrorKind::Error(self.peek().clone(), self.peek().clone(), "don't know why this would occur".into()),
             )))
         }
     }
@@ -532,7 +535,7 @@ impl Parser {
             // iterate over it
             Ok(self.advance())
         } else {
-            Err(Box::new(ParseError::new(ErrorKind::Error(
+            Err(Box::new(ParseError::new(ParseErrorKind::Error(
                 Token::new(token_type, "any".into(), Literal::Nil, 0),
                 self.peek_clone(),
                 string.into(),

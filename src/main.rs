@@ -1,4 +1,6 @@
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    nenia::main()?;
+    if let Err(e) = nenia::main() {
+        eprintln!("{}", e)
+    }
     Ok(())
 }

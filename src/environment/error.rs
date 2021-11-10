@@ -18,7 +18,9 @@ impl EnvironmentError {
 impl fmt::Display for EnvironmentError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.kind {
-            ErrorKind::UndefinedVariable(t, s) => write!(f, "undefined variable `{:#?}` duing {}", t, s),
+            ErrorKind::UndefinedVariable(t, s) => {
+                write!(f, "undefined variable `{:#?}` duing {}", t, s)
+            }
         }
     }
 }
@@ -28,4 +30,8 @@ pub enum ErrorKind {
     UndefinedVariable(Token, String),
 }
 
-pub fn env_error(token: &Token, &str)
+pub fn env_error(token: &Token, str: &str) -> EnvironmentError {
+    EnvironmentError {
+        kind: ErrorKind::UndefinedVariable(token.clone(), str.to_string()),
+    }
+}

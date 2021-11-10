@@ -4,13 +4,13 @@ use std::{error, fmt};
 
 #[derive(Debug)]
 pub struct ParseError {
-    pub kind: ErrorKind,
+    pub kind: ParseErrorKind,
 }
 
 impl error::Error for ParseError {}
 
 impl ParseError {
-    pub fn new(kind: ErrorKind) -> ParseError {
+    pub fn new(kind: ParseErrorKind) -> ParseError {
         ParseError { kind }
     }
 }
@@ -18,14 +18,20 @@ impl ParseError {
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.kind {
-            ErrorKind::Error(exp, fnd, str) => {
-                write!(f, "expected {:?}, found {:?}, during {}", exp, fnd, str)
+            ParseErrorKind::Error(exp, fnd, str) => {
+                write!(f, "expected `Token {:?}`, found {:?}, {}", exp.token_type, fnd, str)
             }
+            ParseErrorKind::ExpectLeftOperand(t) => write!(
+                f,
+                "missing left operand for {:?}({}) in line {}",
+                t.token_type, t.lexeme, t.line
+            ),
         }
     }
 }
 
 #[derive(Debug)]
-pub enum ErrorKind {
+pub enum ParseErrorKind {
     Error(Token, Token, String),
+    ExpectLeftOperand(Token),
 }
